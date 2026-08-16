@@ -9,6 +9,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import io.github.soclear.oneuix.BuildConfig
 import io.github.soclear.oneuix.data.Package
 import io.github.soclear.oneuix.hook.systemui.AOD
+import io.github.soclear.oneuix.hook.systemui.CircleBatteryIcon
 import io.github.soclear.oneuix.hook.systemui.ESIM
 import io.github.soclear.oneuix.hook.systemui.HideBatteryIcon
 import io.github.soclear.oneuix.hook.systemui.Notification
@@ -274,11 +275,21 @@ class Main : IXposedHookLoadPackage, IXposedHookInitPackageResources, IXposedHoo
                     HideBatteryIcon.apply(lpparam)
                 }
 
+                if (preference.systemUI.statusBar.useCircleBatteryIcon) {
+                    CircleBatteryIcon.apply(
+                        lpparam,
+                        preference.systemUI.statusBar.circleBatteryIconSizeDp,
+                        preference.systemUI.statusBar.circleBatteryIconHorizontalPaddingDp,
+                        preference.systemUI.statusBar.circleBatteryIconVerticalPaddingDp
+                    )
+                }
+
                 if (preference.systemUI.statusBar.addBatteryLevelText) {
                     StatusBar.addBatteryLevelText(
                         lpparam,
                         preference.systemUI.statusBar.hideBatteryLevelTextPercentageSign,
                         preference.systemUI.statusBar.hideBatteryLevelTextChargingIcon,
+                        preference.systemUI.statusBar.batteryLevelTextPercentSignScale,
                     )
                 }
 
@@ -291,8 +302,18 @@ class Main : IXposedHookLoadPackage, IXposedHookInitPackageResources, IXposedHoo
                 }
 
                 if (preference.systemUI.statusBar.setStatusBarClockFormat) {
-                    val format = preference.systemUI.statusBar.statusBarClockFormat
-                    StatusBar.setStatusBarClockFormat(lpparam, format)
+                    val statusBar = preference.systemUI.statusBar
+                    StatusBar.setStatusBarClockFormat(
+                        loadPackageParam = lpparam,
+                        timeFormat = statusBar.statusBarClockFormat,
+                        dateFormat = statusBar.statusBarClockDateFormat
+                            .takeIf { statusBar.appendStatusBarClockDate },
+                        dateSeparator = statusBar.statusBarClockDateSeparator,
+                        dateBeforeTime = statusBar.statusBarClockDateBeforeTime,
+                        dateTextScale = statusBar.statusBarClockDateTextScale,
+                        localeTag = statusBar.statusBarClockDateLocale,
+                        dateOffsetDp = statusBar.statusBarClockDateOffsetDp,
+                    )
                 }
 
                 if (preference.systemUI.statusBar.updateStatusBarClockEverySecond) {

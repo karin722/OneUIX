@@ -1,6 +1,5 @@
 package io.github.soclear.oneuix.hook.systemui
 
-import android.annotation.SuppressLint
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -11,16 +10,15 @@ import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import io.github.soclear.oneuix.data.Package
-import java.lang.reflect.Field
+import io.github.soclear.oneuix.hook.systemui.BatteryMeterViewReflection.getBatterySamsungDrawable
+import io.github.soclear.oneuix.hook.systemui.BatteryMeterViewReflection.isBatteryCharging
+import io.github.soclear.oneuix.hook.systemui.BatteryMeterViewReflection.readFieldValue
+import io.github.soclear.oneuix.hook.systemui.BatteryMeterViewReflection.resolveBatteryChargingIconId
+import io.github.soclear.oneuix.hook.systemui.BatteryMeterViewReflection.resolveBatteryMeterView
 import java.util.Collections
 import java.util.WeakHashMap
 
 internal object HideBatteryIcon {
-    private const val STATUS_BAR_CHARGING_ICON = "stat_sys_battery_charging"
-    private const val FALLBACK_CHARGING_ICON = "ic_icon_charging"
-    private const val UNRESOLVED_CHARGING_ICON_ID = -1
-
-    private var batteryChargingIconId = UNRESOLVED_CHARGING_ICON_ID
     private val applyingBatteryIconViews: MutableSet<Any> =
         Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap()))
     private val appliedBatteryChargingIconIds: MutableMap<ImageView, Int> =
@@ -153,59 +151,15 @@ internal object HideBatteryIcon {
         }
     }
 
-    private fun resolveBatteryMeterView(instance: Any): Any? {
-        if (instance is View) return instance
-        val controller = readFieldValue(instance, listOf($$"this$0")) ?: return null
-        return readFieldValue(controller, listOf("mView"))
-    }
-
-    private fun isBatteryCharging(batteryMeterView: Any): Boolean {
-        val meterCharging = readFieldValue(
-            batteryMeterView,
-            listOf("mCharging", "charging")
-        ) as? Boolean == true
-        if (meterCharging) return true
-
-        val samsungDrawable = readFieldValue(
-            batteryMeterView,
-            listOf("mSamsungDrawable", "samsungDrawable")
-        ) ?: return false
-        val batteryState = readFieldValue(
-            samsungDrawable,
-            listOf("batteryState", "mBatteryState")
-        ) ?: return false
-        return readFieldValue(batteryState, listOf("charging")) as? Boolean == true ||
-                readFieldValue(batteryState, listOf("isDirectPowerMode")) as? Boolean == true
-    }
-
     private fun setBatteryChargingIcon(iconView: ImageView) {
-        val drawableId = resolveBatteryChargingIconId(iconView)
+        val drawableId = resolveBatteryChargingIconId(iconView.resources)
         if (drawableId == 0 || appliedBatteryChargingIconIds[iconView] == drawableId) return
         iconView.setImageResource(drawableId)
         appliedBatteryChargingIconIds[iconView] = drawableId
     }
 
-    @SuppressLint("DiscouragedApi")
-    private fun resolveBatteryChargingIconId(iconView: ImageView): Int {
-        if (batteryChargingIconId != UNRESOLVED_CHARGING_ICON_ID) return batteryChargingIconId
-        val resources = iconView.resources
-        batteryChargingIconId = resources.getIdentifier(
-            STATUS_BAR_CHARGING_ICON,
-            "drawable",
-            Package.SYSTEMUI
-        ).takeIf { it != 0 } ?: resources.getIdentifier(
-            FALLBACK_CHARGING_ICON,
-            "drawable",
-            Package.SYSTEMUI
-        )
-        return batteryChargingIconId
-    }
-
     private fun applyBatteryChargingIconTint(batteryMeterView: Any, iconView: ImageView) {
-        val samsungDrawable = readFieldValue(
-            batteryMeterView,
-            listOf("mSamsungDrawable", "samsungDrawable")
-        ) ?: return
+        val samsungDrawable = getBatterySamsungDrawable(batteryMeterView) ?: return
         val iconTint = readFieldValue(samsungDrawable, listOf("iconTint")) as? Int ?: return
         iconView.setColorFilter(iconTint)
     }
@@ -406,14 +360,4 @@ internal object HideBatteryIcon {
         val end: Int,
         val bottom: Int
     )
-
-    private fun readFieldValue(instance: Any, names: List<String>): Any? =
-        findField(instance, names)?.let { field -> runCatching { field.get(instance) }.getOrNull() }
-
-    private fun findField(instance: Any, names: List<String>): Field? {
-        names.forEach { name ->
-            XposedHelpers.findFieldIfExists(instance.javaClass, name)?.let { return it }
-        }
-        return null
-    }
 }

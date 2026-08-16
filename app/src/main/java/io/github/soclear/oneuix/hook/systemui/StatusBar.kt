@@ -7,6 +7,9 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.os.SystemClock
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.RelativeSizeSpan
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -29,8 +32,7 @@ import de.robv.android.xposed.callbacks.XC_InitPackageResources.InitPackageResou
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import io.github.soclear.oneuix.data.ONE_UI_VERSION
 import io.github.soclear.oneuix.data.Package
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import io.github.soclear.oneuix.hook.util.ClockTextFormatter
 import kotlin.math.roundToInt
 
 object StatusBar {
@@ -156,26 +158,64 @@ object StatusBar {
         )
     }
 
-    fun setStatusBarClockFormat(loadPackageParam: LoadPackageParam, format: String) {
+    /**
+     * 设置状态栏时钟的时间与日期格式。
+     *
+     * 时间部分沿用系统时钟原本的字号，日期部分通过 [ClockTextFormatter] 单独缩放，
+     * 因此调整 [dateTextScale] 只会改变日期（例如 `EEEE` → 星期几）的大小。
+     *
+     * @param timeFormat 时间部分的 `DateTimeFormatter` 模式，例如 `HH:mm`
+     * @param dateFormat 日期部分的模式，例如 `E` / `EEEE` / `M/d(E)`。为 null 或空则不显示日期
+     * @param dateSeparator 时间与日期之间的分隔符，会与日期一同缩放
+     * @param dateBeforeTime 为 true 时日期显示在时间之前
+     * @param dateTextScale 日期部分相对时间部分的字号倍率，1f 表示不缩放
+     * @param localeTag 日期使用的语言标签（BCP 47，例如 `ja` / `en-US`）。为空则跟随系统语言
+     * @param dateOffsetDp 日期部分相对基线的垂直偏移（dp），正值向上。时间部分不受影响
+     */
+    fun setStatusBarClockFormat(
+        loadPackageParam: LoadPackageParam,
+        timeFormat: String,
+        dateFormat: String?,
+        dateSeparator: String = " ",
+        dateBeforeTime: Boolean = false,
+        dateTextScale: Float = 1f,
+        localeTag: String = "",
+        dateOffsetDp: Float = 0f,
+    ) {
         if (loadPackageParam.packageName != Package.SYSTEMUI) return
-        val dateTimeFormatter = try {
-            DateTimeFormatter.ofPattern(format)
-        } catch (_: Throwable) {
-            DateTimeFormatter.ofPattern("HH:mm")
-        }
-        setStatusBarClockText(loadPackageParam) {
-            dateTimeFormatter.format(LocalDateTime.now())
+        val clockTextFormatter = ClockTextFormatter(
+            timePattern = timeFormat,
+            datePattern = dateFormat,
+            separator = dateSeparator,
+            dateBeforeTime = dateBeforeTime,
+            dateTextScale = dateTextScale,
+            localeTag = localeTag,
+        )
+        setStatusBarClockText(loadPackageParam) { clockTextView ->
+            // 时钟所在的 TextView 才能拿到正确的屏幕密度，因此在这里把 dp 换算成 px
+            val offsetPx = (dateOffsetDp * clockTextView.resources.displayMetrics.density)
+                .roundToInt()
+            clockTextFormatter.format(dateBaselineShiftPx = offsetPx)
         }
     }
 
-    private fun setStatusBarClockText(loadPackageParam: LoadPackageParam, block: () -> String) {
+    private fun setStatusBarClockText(
+        loadPackageParam: LoadPackageParam,
+        block: (TextView) -> CharSequence
+    ) {
         if (loadPackageParam.packageName != Package.SYSTEMUI) return
         val callback = object : XC_MethodReplacement() {
             override fun replaceHookedMethod(param: MethodHookParam): Any? {
                 val clockTextView = param.thisObject as TextView
-                val dateTime = block()
+                val dateTime = try {
+                    block(clockTextView)
+                } catch (t: Throwable) {
+                    XposedBridge.log(t)
+                    return null
+                }
                 clockTextView.text = dateTime
-                clockTextView.contentDescription = dateTime
+                // contentDescription 供无障碍朗读，使用不带 span 的纯文本
+                clockTextView.contentDescription = dateTime.toString()
                 return null
             }
         }
@@ -330,10 +370,18 @@ object StatusBar {
         }
     }
 
+    /**
+     * 电池图标右侧显示电量文字。
+     *
+     * @param hidePercentSign 为 true 时只显示数字，不显示 `%`
+     * @param hideChargingIcon 为 true 时充电中也不显示 ⚡ 标记
+     * @param percentSignScale `%` 相对数字部分的字号倍率。1f 表示与数字同样大小
+     */
     fun addBatteryLevelText(
         loadPackageParam: LoadPackageParam,
         hidePercentSign: Boolean,
         hideChargingIcon: Boolean,
+        percentSignScale: Float = 1f,
     ) {
         if (loadPackageParam.packageName != Package.SYSTEMUI || ONE_UI_VERSION < 70000) return
         val batteryMeterViewClass = findClassIfExists(
@@ -366,10 +414,14 @@ object StatusBar {
                                 )
                             }
                             val level = getIntField(batteryMeterView, "mLevel")
-                            val percent = if (hidePercentSign) "$level" else "$level%"
                             val isCharging = callMethod(batteryMeterView, "isCharging") as Boolean
                             val suffix = if (isCharging && !hideChargingIcon) "\u26A1\uFE0E" else ""
-                            textView.text = "$percent$suffix"
+                            textView.text = buildBatteryLevelText(
+                                level = level,
+                                hidePercentSign = hidePercentSign,
+                                percentSignScale = percentSignScale,
+                                suffix = suffix
+                            )
                             textView.setTextColor(getIntField(batteryMeterView, "mTextColor"))
                         } catch (t: Throwable) {
                             XposedBridge.log(t)
@@ -396,5 +448,32 @@ object StatusBar {
         } catch (t: Throwable) {
             XposedBridge.log(t)
         }
+    }
+
+    /**
+     * 电量文字。`%` 通过 [RelativeSizeSpan] 单独缩放，因此不会影响数字部分的字号。
+     * 这样可以复现旧越狱插件那种「数字大、百分号小」的排版。
+     */
+    private fun buildBatteryLevelText(
+        level: Int,
+        hidePercentSign: Boolean,
+        percentSignScale: Float,
+        suffix: String,
+    ): CharSequence {
+        if (hidePercentSign) return "$level$suffix"
+        if (percentSignScale == 1f) return "$level%$suffix"
+
+        val builder = SpannableStringBuilder()
+        builder.append(level.toString())
+        val start = builder.length
+        builder.append('%')
+        builder.setSpan(
+            RelativeSizeSpan(percentSignScale),
+            start,
+            builder.length,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        builder.append(suffix)
+        return builder
     }
 }

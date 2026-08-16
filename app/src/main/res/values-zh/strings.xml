@@ -28,6 +28,14 @@
     <string name="turnOn5gQsTile_summary">需要勾选系统 UI 和通话设置</string>
     <string name="root5gQsTile_summary">请授予本应用 root 权限后手动添加 5G 磁贴</string>
     <string name="setStatusBarClockFormat_title">设置状态栏日期时间格式</string>
+    <string name="appendStatusBarClockDate_title">在状态栏时钟旁显示日期</string>
+    <string name="appendStatusBarClockDate_summary">日期部分可单独调整字号，不影响时间部分</string>
+    <string name="statusBarClockDateFormat_label">日期格式（E、EEEE、M/d(E) 等）</string>
+    <string name="statusBarClockDateSeparator_label">时间与日期之间的分隔符</string>
+    <string name="statusBarClockDateLocale_label">日期语言（ja、en-US 等，留空跟随系统）</string>
+    <string name="statusBarClockDateBeforeTime_title">日期显示在时间之前</string>
+    <string name="statusBarClockDateBeforeTime_summary">关：12:34 星期四 / 开：星期四 12:34</string>
+    <string name="statusBarClockDateTextScale_title">日期字号（相对于时间的倍率）</string>
     <string name="updateStatusBarClockEverySecond_title">状态栏时间每秒更新</string>
     <string name="updateStatusBarClockEverySecond_summary">同时设置数字为等宽字体</string>
     <string name="hideSecureFolderStatusBarIcon_title">隐藏安全文件夹状态栏图标</string>

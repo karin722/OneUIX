@@ -16,10 +16,17 @@
     <string name="hideBatteryPercentageSign_summary" formatted="false">Remove the % sign only, keep the numbers</string>
     <string name="hideBatteryIcon_title">Hide battery icon</string>
     <string name="hideBatteryIcon_summary">Hides the battery icon while displaying the charging icon when plugged. Doesn\'t affect the battery percentage</string>
+    <string name="useCircleBatteryIcon_title">Use circular battery icon (LineageOS style)</string>
+    <string name="useCircleBatteryIcon_summary">Replace the status bar battery icon with a circular ring indicator</string>
+    <string name="circleBatteryIconSizeDp_title">Icon size</string>
+    <string name="circleBatteryIconHorizontalPaddingDp_title">Horizontal padding</string>
+    <string name="circleBatteryIconVerticalPaddingDp_title">Vertical padding</string>
     <string name="addBatteryLevelText_title">Show battery level text</string>
     <string name="addBatteryLevelText_summary">Display battery level as text alongside the icon, e.g. 96%</string>
     <string name="hideBatteryLevelTextPercentageSign_title">Hide percentage sign</string>
+    <string name="batteryLevelTextPercentSignScale_title" formatted="false">% sign size (relative to the number)</string>
     <string name="hideBatteryLevelTextChargingIcon_title">Hide charging icon</string>
+    <string name="hideBatteryLevelTextChargingIcon_summary">Hides the ⚡ mark next to the battery text while charging</string>
     <string name="supportRealTimeNetworkSpeed_title">Support displaying real-time network speed</string>
     <string name="supportRealTimeNetworkSpeed_summary">Settings -> Notifications -> Advanced settings -> Show real-time network speed</string>
     <string name="showSeparateUpDownNetworkSpeeds_title">Show separate upload/download speeds in status bar</string>
@@ -28,6 +35,15 @@
     <string name="turnOn5gQsTile_summary">Requires checking System UI and Call Settings</string>
     <string name="root5gQsTile_summary">Please grant root access to this app, then manually add the 5G tile</string>
     <string name="setStatusBarClockFormat_title">Set status bar date and time format</string>
+    <string name="appendStatusBarClockDate_title">Show date next to the status bar clock</string>
+    <string name="appendStatusBarClockDate_summary">Adds a date part with its own font size, leaving the clock font size untouched</string>
+    <string name="statusBarClockDateFormat_label">Date pattern (E, EEEE, M/d(E) …)</string>
+    <string name="statusBarClockDateSeparator_label">Separator between time and date</string>
+    <string name="statusBarClockDateLocale_label">Date language (ja, en-US … empty = system)</string>
+    <string name="statusBarClockDateBeforeTime_title">Show date before time</string>
+    <string name="statusBarClockDateBeforeTime_summary">Off: 12:34 Thursday / On: Thursday 12:34</string>
+    <string name="statusBarClockDateTextScale_title">Date font size (relative to the clock)</string>
+    <string name="statusBarClockDateOffsetDp_title">Date vertical offset (positive moves up)</string>
     <string name="updateStatusBarClockEverySecond_title">Update status bar clock every second</string>
     <string name="updateStatusBarClockEverySecond_summary">Also sets numbers to monospaced font</string>
     <string name="hideSecureFolderStatusBarIcon_title">Hide Secure Folder status bar icon</string>
