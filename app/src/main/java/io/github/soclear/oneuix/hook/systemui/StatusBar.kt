@@ -34,20 +34,23 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import io.github.soclear.oneuix.data.ONE_UI_VERSION
 import io.github.soclear.oneuix.data.Package
 import io.github.soclear.oneuix.hook.util.ClockTextFormatter
-import java.lang.ref.WeakReference
 import java.util.Collections
 import java.util.WeakHashMap
 import kotlin.math.roundToInt
 
 object StatusBar {
     /**
-     * ステータスバーの時計ビュー。
+     * 追跡できた時計ビュー。
      *
      * One UI ではクラス名が `Clock` ではなく `QSClockIndicatorView` なので、
      * ビュー階層をクラス名で探すのは当てにならない。
      * [setStatusBarClockFormat] と同じコントローラーから実体を受け取る。
+     *
+     * 同じクラスがクイック設定パネル側の大きな時計にも使われるため、
+     * 1 つに決め打ちせず候補として集め、電池アイコンと同じ画面のものを選ぶ。
      */
-    private var statusBarClock: WeakReference<TextView>? = null
+    private val statusBarClocks: MutableSet<TextView> =
+        Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap()))
 
     /** 状態バーの時計に合わせた字形をすでに適用した電量テキスト。 */
     private val styledBatteryLevelTexts: MutableSet<TextView> =
@@ -400,6 +403,7 @@ object StatusBar {
         hideChargingIcon: Boolean,
         percentSignScale: Float = 1f,
         marginStartDp: Float = 4f,
+        textSizeScale: Float = 1f,
     ) {
         if (loadPackageParam.packageName != Package.SYSTEMUI || ONE_UI_VERSION < 70000) return
         trackStatusBarClock(loadPackageParam)
@@ -433,7 +437,9 @@ object StatusBar {
                                 )
                             }
                             moveAfterBatteryIcon(batteryMeterView, textView, marginStartDp)
-                            applyStatusBarTextAppearance(batteryMeterView, textView)
+                            applyStatusBarTextAppearance(
+                                batteryMeterView, textView, textSizeScale
+                            )
                             val level = getIntField(batteryMeterView, "mLevel")
                             val isCharging = callMethod(batteryMeterView, "isCharging") as Boolean
                             val suffix = if (isCharging && !hideChargingIcon) "\u26A1\uFE0E" else ""
@@ -532,7 +538,7 @@ object StatusBar {
                     ?: runCatching { getObjectField(param.thisObject, "view") as? TextView }
                         .getOrNull()
                     ?: return
-                statusBarClock = WeakReference(view)
+                statusBarClocks.add(view)
             }
         }
         runCatching {
@@ -565,26 +571,35 @@ object StatusBar {
      *
      * 时钟优先取 [trackStatusBarClock] 抓到的实例。One UI 的状态栏时钟类名是
      * `QSClockIndicatorView`，按类名在视图树里找是靠不住的。
-     * 都取不到时退回到系统自带的电量文字（`mBatteryPercentView`），它同样是状态栏样式。
+     *
+     * 字号则以系统自带的电量文字（`mBatteryPercentView`）为准。
+     * 时钟在快捷设置面板里会放大，直接照搬会明显偏大。
      */
-    private fun applyStatusBarTextAppearance(batteryMeterView: ViewGroup, textView: TextView) {
+    private fun applyStatusBarTextAppearance(
+        batteryMeterView: ViewGroup,
+        textView: TextView,
+        textSizeScale: Float,
+    ) {
         // ビュー階層をたどる処理なので、同じ TextView に対しては一度だけ実行する。
         // フォントやテーマが変わったときは status bar ごと作り直されるため、取りこぼしはない。
         if (textView in styledBatteryLevelTexts) return
-        // まだアタッチされていない等で時計が見つからない場合は、次の更新でもう一度試す。
-        val reference = statusBarClock?.get()
+        val percentView = runCatching {
+            getObjectField(batteryMeterView, "mBatteryPercentView") as? TextView
+        }.getOrNull()
+        // まだアタッチされていない等で見つからない場合は、次の更新でもう一度試す。
+        val typefaceSource = findTrackedClock(batteryMeterView)
             ?: findStatusBarClock(batteryMeterView)
-            ?: runCatching {
-                getObjectField(batteryMeterView, "mBatteryPercentView") as? TextView
-            }.getOrNull()
+            ?: percentView
             ?: return
+        val sizeSource = percentView ?: typefaceSource
         XposedBridge.log(
-            "OneUIX: battery level text styled from " + reference.javaClass.name
+            "OneUIX: battery level text typeface from " + typefaceSource.javaClass.name +
+                ", size from " + sizeSource.javaClass.name
         )
-        textView.typeface = reference.typeface
-        textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, reference.textSize)
-        textView.letterSpacing = reference.letterSpacing
-        textView.fontFeatureSettings = reference.fontFeatureSettings
+        textView.typeface = typefaceSource.typeface
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, sizeSource.textSize * textSizeScale)
+        textView.letterSpacing = typefaceSource.letterSpacing
+        textView.fontFeatureSettings = typefaceSource.fontFeatureSettings
         styledBatteryLevelTexts.add(textView)
     }
 
@@ -592,6 +607,15 @@ object StatusBar {
      * ステータスバーの時計を、電池ビューから上へたどって探す予備の手段。
      * [statusBarClock] が取れていないときだけ使う。
      */
+    /** 電池アイコンと同じ画面に出ている時計。見つからなければ最後に拾ったもの。 */
+    private fun findTrackedClock(batteryMeterView: View): TextView? {
+        val root = batteryMeterView.rootView
+        synchronized(statusBarClocks) {
+            return statusBarClocks.firstOrNull { it.rootView === root }
+                ?: statusBarClocks.lastOrNull()
+        }
+    }
+
     private fun findStatusBarClock(batteryMeterView: ViewGroup): TextView? {
         var child: View = batteryMeterView
         while (true) {

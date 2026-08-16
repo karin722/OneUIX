@@ -210,4 +210,6 @@
     <string name="about_unknown">Inconnu</string>
     <string name="cancel">Annuler</string>
     <string name="batteryLevelTextMarginStartDp_title">Espace entre l\'icône et le nombre</string>
+    <string name="batteryLevelTextSizeScale_title">Taille du texte</string>
+    <string name="about_contributor">Contributeur</string>
 </resources>

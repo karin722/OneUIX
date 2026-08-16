@@ -210,4 +210,6 @@
     <string name="about_unknown">알 수 없음</string>
     <string name="cancel">취소</string>
     <string name="batteryLevelTextMarginStartDp_title">아이콘과 숫자 사이 간격</string>
+    <string name="batteryLevelTextSizeScale_title">글자 크기</string>
+    <string name="about_contributor">기여자</string>
 </resources>

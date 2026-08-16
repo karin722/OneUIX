@@ -291,6 +291,7 @@ class Main : IXposedHookLoadPackage, IXposedHookInitPackageResources, IXposedHoo
                         preference.systemUI.statusBar.hideBatteryLevelTextChargingIcon,
                         preference.systemUI.statusBar.batteryLevelTextPercentSignScale,
                         preference.systemUI.statusBar.batteryLevelTextMarginStartDp,
+                        preference.systemUI.statusBar.batteryLevelTextSizeScale,
                     )
                 }
 

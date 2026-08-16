@@ -6,6 +6,9 @@
         android:name="android.hardware.telephony"
         android:required="false" />
 
+    <!-- 「One UI X について」で GitHub のアバター画像を読み込むためだけに使う -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <uses-permission
         android:name="android.permission.READ_PRIVILEGED_PHONE_STATE"
         tools:ignore="ProtectedPermissions" />

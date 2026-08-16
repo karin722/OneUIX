@@ -226,4 +226,6 @@
     <string name="about_unknown">Unknown</string>
     <string name="cancel">Cancel</string>
     <string name="batteryLevelTextMarginStartDp_title">Gap between the icon and the number</string>
+    <string name="batteryLevelTextSizeScale_title">Text size</string>
+    <string name="about_contributor">Contributor</string>
 </resources>

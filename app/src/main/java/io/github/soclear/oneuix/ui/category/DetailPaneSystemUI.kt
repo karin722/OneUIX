@@ -340,6 +340,9 @@ fun DetailPaneSystemUI(
                         var marginStartDp by remember {
                             mutableFloatStateOf(uiState.statusBar.batteryLevelTextMarginStartDp)
                         }
+                        var textSizeScale by remember {
+                            mutableFloatStateOf(uiState.statusBar.batteryLevelTextSizeScale)
+                        }
 
                         SwitchItem(
                             icon = ImageVector.vectorResource(id = R.drawable.battery),
@@ -385,6 +388,33 @@ fun DetailPaneSystemUI(
                                 )
                             }
                         }
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    text = stringResource(
+                                        id = R.string.batteryLevelTextSizeScale_title
+                                    )
+                                )
+                            },
+                            supportingContent = { Text(text = "%.2fx".format(textSizeScale)) },
+                            leadingContent = {
+                                Icon(
+                                    ImageVector.vectorResource(id = R.drawable.format_size),
+                                    contentDescription = null
+                                )
+                            }
+                        )
+                        Slider(
+                            value = textSizeScale,
+                            onValueChange = { textSizeScale = it },
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            valueRange = 0.5f..1.5f,
+                            onValueChangeFinished = {
+                                onEvent(
+                                    SystemUIEvent.StatusBar.BatteryLevelTextSizeScale(textSizeScale)
+                                )
+                            }
+                        )
                         ListItem(
                             headlineContent = {
                                 Text(
@@ -1349,6 +1379,9 @@ sealed interface SystemUIEvent {
         value class BatteryLevelTextMarginStartDp(val value: Float) : StatusBar
 
         @JvmInline
+        value class BatteryLevelTextSizeScale(val value: Float) : StatusBar
+
+        @JvmInline
         value class SupportRealTimeNetworkSpeed(val value: Boolean) : StatusBar
 
         @JvmInline
@@ -1704,6 +1737,16 @@ private fun SettingViewModel.onStatusBarEvent(event: SystemUIEvent.StatusBar) {
                     systemUI = preference.systemUI.copy(
                         statusBar = preference.systemUI.statusBar.copy(
                             batteryLevelTextMarginStartDp = event.value
+                        )
+                    )
+                )
+            }
+
+            is SystemUIEvent.StatusBar.BatteryLevelTextSizeScale -> {
+                preference.copy(
+                    systemUI = preference.systemUI.copy(
+                        statusBar = preference.systemUI.statusBar.copy(
+                            batteryLevelTextSizeScale = event.value
                         )
                     )
                 )

@@ -226,4 +226,6 @@
     <string name="about_unknown">不明</string>
     <string name="cancel">キャンセル</string>
     <string name="batteryLevelTextMarginStartDp_title">アイコンと数値の間隔</string>
+    <string name="batteryLevelTextSizeScale_title">文字サイズ</string>
+    <string name="about_contributor">コントリビューター</string>
 </resources>

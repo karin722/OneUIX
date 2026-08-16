@@ -210,4 +210,6 @@
     <string name="about_unknown">Неизвестно</string>
     <string name="cancel">Отмена</string>
     <string name="batteryLevelTextMarginStartDp_title">Отступ между значком и числом</string>
+    <string name="batteryLevelTextSizeScale_title">Размер текста</string>
+    <string name="about_contributor">Участник</string>
 </resources>
