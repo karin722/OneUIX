@@ -1,6 +1,7 @@
 package io.github.soclear.oneuix.hook
 
 import android.app.NotificationChannel
+import android.os.Bundle
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XC_MethodReplacement.DO_NOTHING
 import de.robv.android.xposed.XposedBridge
@@ -16,6 +17,42 @@ import io.github.soclear.oneuix.data.Package
 
 
 object Android {
+    fun disableWritingToolkitGlobally(loadPackageParam: LoadPackageParam) {
+        if (loadPackageParam.packageName != Package.ANDROID) return
+
+        val galaxyAiRestrictionsPackage = "com.samsung.android.knox.galaxyai"
+        val writingToolkitKey = "key_writing_toolkit"
+        val grayoutKey = "grayout"
+
+        try {
+            val proxyClass = findClassIfExists(
+                "com.android.server.enterprise.EDMProxyService",
+                loadPackageParam.classLoader
+            ) ?: return
+
+            hookAllMethods(
+                proxyClass,
+                "getApplicationRestrictions",
+                object : XC_MethodHook() {
+                    override fun afterHookedMethod(param: MethodHookParam) {
+                        if (param.hasThrowable()) return
+                        if (param.args.getOrNull(0) != galaxyAiRestrictionsPackage) return
+
+                        val restrictions = Bundle(param.result as? Bundle ?: Bundle.EMPTY)
+                        val writingToolkit = Bundle(
+                            restrictions.getBundle(writingToolkitKey) ?: Bundle.EMPTY
+                        )
+                        writingToolkit.putBoolean(grayoutKey, true)
+                        restrictions.putBundle(writingToolkitKey, writingToolkit)
+                        param.result = restrictions
+                    }
+                }
+            )
+        } catch (t: Throwable) {
+            XposedBridge.log(t)
+        }
+    }
+
     fun setBlockableNotificationChannel() {
         try {
             val notificationChannelClass = NotificationChannel::class.java

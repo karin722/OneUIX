@@ -9,7 +9,22 @@ enum class Category(val packageName: String) {
     Settings(Package.SETTINGS),
     Call(Package.DIALER),
     Camera(Package.CAMERA),
-    Other(BuildConfig.APPLICATION_ID),
+    Browser(Package.BROWSER),
+    Calendar(Package.CALENDAR),
+    DualApp(Package.DUAL_APP),
+    Gallery(Package.GALLERY),
+    GalaxyStore(Package.STORE),
+    HealthMonitor(Package.HEALTH_MONITOR),
+    Launcher(Package.LAUNCHER),
+    Messaging(Package.MESSAGING),
+    Notes(Package.NOTES),
+    PhotoRetouching(Package.PHOTO_RETOUCHING),
+    SketchBook(Package.SKETCH_BOOK),
+    SPen(Package.TRANSLATION),
+    ThemeCenter(Package.THEME_CENTER),
+    Video(Package.VIDEO),
+    WatchManager(Package.WATCH_MANAGER),
+    Weather(Package.WEATHER),
 
     /**
      * 「One UI X について」。設定項目を持たないので、
@@ -17,8 +32,17 @@ enum class Category(val packageName: String) {
      */
     About(BuildConfig.APPLICATION_ID);
 
-    /** 設定項目を持つカテゴリかどうか。リセットや検索の対象にできる。 */
+    /** 対象アプリの一覧に並べるカテゴリかどうか。 */
     val hasPreferences: Boolean get() = this != About
+
+    /**
+     * 初期値へのリセットを出せるカテゴリかどうか。
+     *
+     * アプリ別のカテゴリは設定の保存先が [io.github.soclear.oneuix.data.Preference.Other] で
+     * 共通なので、1 つ戻すと他のアプリの設定まで消えてしまう。そのため対象外にしている。
+     */
+    val resettable: Boolean
+        get() = this in setOf(Android, SystemUI, Settings, Call, Camera)
 
     companion object {
         val preferenceEntries: List<Category> = entries.filter { it.hasPreferences }

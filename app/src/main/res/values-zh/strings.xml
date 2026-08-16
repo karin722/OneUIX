@@ -178,12 +178,6 @@
     <string name="group_display">显示</string>
     <string name="group_information">显示的信息</string>
     <string name="group_customization">个性化</string>
-    <string name="group_store_and_apps">商店与应用</string>
-    <string name="group_system_apps">系统应用</string>
-    <string name="group_samsung_apps">三星应用</string>
-    <string name="group_region_unlock">解除地区限制</string>
-    <string name="group_home_screen">主屏幕</string>
-    <string name="group_watch">Galaxy Watch</string>
     <string name="group_call_recording">通话录音</string>
     <string name="group_call_display">通话记录显示</string>
     <string name="group_call_link">设备互联</string>
@@ -221,4 +215,12 @@
     <string name="batteryLevelTextSizeScale_title">文字大小</string>
     <string name="about_contributor">贡献者</string>
     <string name="batteryLevelTextOffsetDp_title">垂直位置（正值向上）</string>
+    <string name="notification">通知</string>
+    <string name="status_bar">状态栏</string>
+    <string name="setStatusBarClockTextScale_title">设置状态栏时间日期缩放倍数</string>
+    <string name="supportSharedAlbumsInHide_title">允许隐藏分享的相册</string>
+    <string name="supportSharedAlbumsInHide_summary">右上角更多选项->隐藏相册</string>
+    <string name="hideVideoEditorStudio_title">隐藏视频编辑工作室</string>
+    <string name="disableWritingToolkitGlobally_title">全局禁用写作工具包</string>
+    <string name="disableWritingToolkitGlobally_summary">通过系统框架从所有应用的文本选择菜单中移除三星写作工具包</string>
 </resources>

@@ -35,6 +35,7 @@
 - 支持应用跳转拦截
 - 解除 FCM 网络限制
 - 拔出充电器时不亮屏
+- 全局禁用三星写作工具包
 
 #### 系统 UI
 
@@ -50,6 +51,7 @@
 - 支持显示实时网速
 - 状态栏显示上传下载网速
 - 设置状态栏日期时间格式
+- 设置状态栏时间大小
 - 状态栏时间每秒更新
 - 隐藏安全文件夹状态栏图标
 - 恢复蓝牙状态栏图标
@@ -124,6 +126,8 @@
 - 视频播放器添加 3.0 和 4.0 倍速
 - 强制链接跳转外部三星浏览器
 - 显示相册的所有设置
+- 允许隐藏分享的相册
+- 隐藏视频编辑工作室
 - 支持三星笔记的所有功能
 - 日历中显示中国节假日
 - 支持拦截短信
@@ -174,6 +178,7 @@
 - Support app jump blocking
 - Lift FCM network limit
 - Keep screen off when unplugged
+- Disable Samsung Writing Toolkit globally
 
 #### System UI
 
@@ -189,6 +194,7 @@
 - Support displaying real-time network speed
 - Show separate upload/download speeds in status bar
 - Set status bar date and time format
+- Set status bar clock size
 - Update status bar clock every second
 - Hide Secure Folder status bar icon
 - Restore Bluetooth status bar icon
@@ -263,6 +269,8 @@
 - Add 3.0x and 4.0x playback speeds to video player
 - Force links to open in external Samsung Internet
 - Show all Gallery settings
+- Allow hiding shared albums
+- Hide Video Editor Studio
 - Support all Samsung Notes features
 - Show Chinese holidays in Calendar
 - Support message blocking

@@ -113,6 +113,13 @@ fun DetailPaneAndroid(
                 checked = uiState.disableScreenWakeOnPowerUnplugged,
                 onCheckedChange = { onEvent(AndroidEvent.DisableScreenWakeOnPowerUnplugged(it)) }
             )
+            SwitchItem(
+                icon = ImageVector.vectorResource(id = R.drawable.format_letter_spacing),
+                title = stringResource(id = R.string.disableWritingToolkitGlobally_title),
+                summary = stringResource(id = R.string.disableWritingToolkitGlobally_summary),
+                checked = uiState.disableWritingToolkitGlobally,
+                onCheckedChange = { onEvent(AndroidEvent.DisableWritingToolkitGlobally(it)) }
+            )
         }
     }
 }
@@ -141,6 +148,9 @@ sealed interface AndroidEvent {
 
     @JvmInline
     value class DisableScreenWakeOnPowerUnplugged(val value: Boolean) : AndroidEvent
+
+    @JvmInline
+    value class DisableWritingToolkitGlobally(val value: Boolean) : AndroidEvent
 }
 
 fun SettingViewModel.onAndroidEvent(event: AndroidEvent) {
@@ -206,6 +216,14 @@ fun SettingViewModel.onAndroidEvent(event: AndroidEvent) {
                 preference.copy(
                     android = preference.android.copy(
                         disableScreenWakeOnPowerUnplugged = event.value
+                    )
+                )
+            }
+
+            is AndroidEvent.DisableWritingToolkitGlobally -> {
+                preference.copy(
+                    android = preference.android.copy(
+                        disableWritingToolkitGlobally = event.value
                     )
                 )
             }

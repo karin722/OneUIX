@@ -35,6 +35,10 @@ class Main : IXposedHookLoadPackage, IXposedHookInitPackageResources, IXposedHoo
 
         when (lpparam.packageName) {
             Package.ANDROID -> {
+                if (preference.android.disableWritingToolkitGlobally) {
+                    Android.disableWritingToolkitGlobally(lpparam)
+                }
+
                 if (preference.android.disablePinVerifyPer72h) {
                     Android.disablePinVerifyPer72h(lpparam)
                 }
@@ -121,6 +125,12 @@ class Main : IXposedHookLoadPackage, IXposedHookInitPackageResources, IXposedHoo
             Package.GALLERY -> {
                 if (preference.other.supportAllGallerySettings) {
                     Gallery.supportAllSettings(lpparam)
+                }
+                if (preference.other.supportSharedAlbumsInHide) {
+                    Gallery.supportSharedAlbumsInHide(lpparam)
+                }
+                if (preference.other.hideVideoEditorStudio) {
+                    Gallery.hideVideoEditorStudio(lpparam)
                 }
             }
 
@@ -319,6 +329,11 @@ class Main : IXposedHookLoadPackage, IXposedHookInitPackageResources, IXposedHoo
                     )
                 }
 
+                if (preference.systemUI.statusBar.setStatusBarClockTextScale) {
+                    val scale = preference.systemUI.statusBar.statusBarClockTextScale
+                    StatusBar.setStatusBarClockTextScale(lpparam, scale)
+                }
+
                 if (preference.systemUI.statusBar.updateStatusBarClockEverySecond) {
                     StatusBar.updateStatusBarClockEverySecond(lpparam)
                 }
@@ -497,7 +512,7 @@ class Main : IXposedHookLoadPackage, IXposedHookInitPackageResources, IXposedHoo
                 }
             }
 
-            "com.samsung.android.service.airviewdictionary" -> {
+            Package.TRANSLATION -> {
                 if (preference.other.useSPenGoogleTranslate) {
                     SPen.switchTranslateSource(lpparam, useGoogle = true)
                 }

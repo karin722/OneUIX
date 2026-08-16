@@ -6,12 +6,11 @@ import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers.findAndHookMethod
 import de.robv.android.xposed.XposedHelpers.findClass
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
+import io.github.soclear.oneuix.data.Package
 
 object SPen {
-    private const val PACKAGE_SPEN = "com.samsung.android.service.airviewdictionary"
-
     fun switchTranslateSource(loadPackageParam: LoadPackageParam, useGoogle: Boolean) {
-        if (loadPackageParam.packageName != PACKAGE_SPEN) return
+        if (loadPackageParam.packageName != Package.TRANSLATION) return
 
         val classLoader = loadPackageParam.classLoader
 

@@ -65,6 +65,8 @@ private val CardShape = RoundedCornerShape(24.dp)
 private data class SearchableSetting(
     val entry: SettingSearchEntry,
     val title: String,
+    /** 検索結果に出す所在地。見出しがある画面はその見出し、無ければ対象アプリ名。 */
+    val subtitle: String,
     val haystack: String,
 )
 
@@ -85,12 +87,15 @@ fun ListPaneCategory(
     val focusManager = LocalFocusManager.current
 
     val context = LocalContext.current
-    val searchableSettings = remember(context) {
+    val searchableSettings = remember(context, categoryAppInfoList) {
         val resources = context.resources
+        val labels = categoryAppInfoList.associate { it.category to it.label }
         SettingSearchIndex.map { entry ->
             val title = resources.getString(entry.titleRes)
             val summary = entry.summaryRes?.let(resources::getString).orEmpty()
-            SearchableSetting(entry, title, "$title\n$summary")
+            val subtitle = entry.groupRes?.let(resources::getString)
+                ?: labels[entry.category].orEmpty()
+            SearchableSetting(entry, title, subtitle, "$title\n$summary")
         }
     }
     val results = remember(query, searchableSettings) {
@@ -297,7 +302,7 @@ private fun SearchResultItem(result: SearchableSetting, onClick: () -> Unit) {
     ) {
         ListItem(
             headlineContent = { Text(result.title) },
-            supportingContent = { Text(stringResource(id = result.entry.groupRes)) },
+            supportingContent = { Text(result.subtitle) },
             trailingContent = {
                 Icon(
                     ImageVector.vectorResource(id = R.drawable.chevron_right),

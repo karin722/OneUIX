@@ -22,6 +22,7 @@ data class Preference(
         val allowAllRotation: Boolean = false,
         val liftFcmNetworkLimit: Boolean = false,
         val disableScreenWakeOnPowerUnplugged: Boolean = false,
+        val disableWritingToolkitGlobally: Boolean = false,
     )
 
     @Serializable
@@ -58,6 +59,8 @@ data class Preference(
             val showSeparateUpDownNetworkSpeeds: Boolean = false,
             val setStatusBarClockFormat: Boolean = false,
             val statusBarClockFormat: String = "HH:mm",
+            val setStatusBarClockTextScale: Boolean = false,
+            val statusBarClockTextScale: Float = 1f,
             val appendStatusBarClockDate: Boolean = false,
             val statusBarClockDateFormat: String = "EEEE",
             val statusBarClockDateSeparator: String = " ",
@@ -153,6 +156,8 @@ data class Preference(
         val showMorePlaybackSpeeds: Boolean = false,
         val redirectCustomTab: Boolean = false,
         val supportAllGallerySettings: Boolean = true,
+        val supportSharedAlbumsInHide: Boolean = false,
+        val hideVideoEditorStudio: Boolean = false,
         val supportAllNotesFeatures: Boolean = true,
         val enableChineseHolidayDisplay: Boolean = false,
         val supportBlockMessage: Boolean = true,

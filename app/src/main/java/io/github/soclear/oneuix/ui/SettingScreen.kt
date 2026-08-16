@@ -47,14 +47,44 @@ import io.github.soclear.oneuix.ui.category.DetailPaneAbout
 import io.github.soclear.oneuix.ui.category.DetailPaneAndroid
 import io.github.soclear.oneuix.ui.category.DetailPaneCall
 import io.github.soclear.oneuix.ui.category.DetailPaneCamera
-import io.github.soclear.oneuix.ui.category.DetailPaneOther
 import io.github.soclear.oneuix.ui.category.DetailPaneSettings
 import io.github.soclear.oneuix.ui.category.DetailPaneSystemUI
+import io.github.soclear.oneuix.ui.category.DetailPaneBrowser
+import io.github.soclear.oneuix.ui.category.DetailPaneCalendar
+import io.github.soclear.oneuix.ui.category.DetailPaneDualApp
+import io.github.soclear.oneuix.ui.category.DetailPaneGalaxyStore
+import io.github.soclear.oneuix.ui.category.DetailPaneGallery
+import io.github.soclear.oneuix.ui.category.DetailPaneHealthMonitor
+import io.github.soclear.oneuix.ui.category.DetailPaneLauncher
+import io.github.soclear.oneuix.ui.category.DetailPaneMessaging
+import io.github.soclear.oneuix.ui.category.DetailPaneNotes
+import io.github.soclear.oneuix.ui.category.DetailPanePhotoRetouching
+import io.github.soclear.oneuix.ui.category.DetailPaneSPen
+import io.github.soclear.oneuix.ui.category.DetailPaneSketchBook
+import io.github.soclear.oneuix.ui.category.DetailPaneThemeCenter
+import io.github.soclear.oneuix.ui.category.DetailPaneVideo
+import io.github.soclear.oneuix.ui.category.DetailPaneWatchManager
+import io.github.soclear.oneuix.ui.category.DetailPaneWeather
+import io.github.soclear.oneuix.ui.category.onBrowserEvent
+import io.github.soclear.oneuix.ui.category.onCalendarEvent
+import io.github.soclear.oneuix.ui.category.onDualAppEvent
+import io.github.soclear.oneuix.ui.category.onGalaxyStoreEvent
+import io.github.soclear.oneuix.ui.category.onGalleryEvent
+import io.github.soclear.oneuix.ui.category.onHealthMonitorEvent
+import io.github.soclear.oneuix.ui.category.onLauncherEvent
+import io.github.soclear.oneuix.ui.category.onMessagingEvent
+import io.github.soclear.oneuix.ui.category.onNotesEvent
+import io.github.soclear.oneuix.ui.category.onPhotoRetouchingEvent
+import io.github.soclear.oneuix.ui.category.onSPenEvent
+import io.github.soclear.oneuix.ui.category.onSketchBookEvent
+import io.github.soclear.oneuix.ui.category.onThemeCenterEvent
+import io.github.soclear.oneuix.ui.category.onVideoEvent
+import io.github.soclear.oneuix.ui.category.onWatchManagerEvent
+import io.github.soclear.oneuix.ui.category.onWeatherEvent
 import io.github.soclear.oneuix.ui.category.ListPaneCategory
 import io.github.soclear.oneuix.ui.category.onAndroidEvent
 import io.github.soclear.oneuix.ui.category.onCallEvent
 import io.github.soclear.oneuix.ui.category.onCameraEvent
-import io.github.soclear.oneuix.ui.category.onOtherEvent
 import io.github.soclear.oneuix.ui.category.onSettingsEvent
 import io.github.soclear.oneuix.ui.category.onSystemUIEvent
 import io.github.soclear.oneuix.ui.component.LocalSettingJump
@@ -142,7 +172,7 @@ fun SettingScreen(viewModel: SettingViewModel, modifier: Modifier = Modifier) {
                             title = categoryLabel(category, categoryAppInfoList),
                             showBack = scaffoldNavigator.canNavigateBack(),
                             onBack = { scope.launch { scaffoldNavigator.navigateBack() } },
-                            canReset = category.hasPreferences,
+                            canReset = category.resettable,
                             onReset = { viewModel.resetCategory(category) }
                         ) { contentModifier ->
                             when (category) {
@@ -176,9 +206,99 @@ fun SettingScreen(viewModel: SettingViewModel, modifier: Modifier = Modifier) {
                                     modifier = contentModifier
                                 )
 
-                                Category.Other -> DetailPaneOther(
+                                Category.Browser -> DetailPaneBrowser(
                                     uiState = preference.other,
-                                    onEvent = viewModel::onOtherEvent,
+                                    onEvent = viewModel::onBrowserEvent,
+                                    modifier = contentModifier
+                                )
+
+                                Category.Calendar -> DetailPaneCalendar(
+                                    uiState = preference.other,
+                                    onEvent = viewModel::onCalendarEvent,
+                                    modifier = contentModifier
+                                )
+
+                                Category.DualApp -> DetailPaneDualApp(
+                                    uiState = preference.other,
+                                    onEvent = viewModel::onDualAppEvent,
+                                    modifier = contentModifier
+                                )
+
+                                Category.Gallery -> DetailPaneGallery(
+                                    uiState = preference.other,
+                                    onEvent = viewModel::onGalleryEvent,
+                                    modifier = contentModifier
+                                )
+
+                                Category.GalaxyStore -> DetailPaneGalaxyStore(
+                                    uiState = preference.other,
+                                    onEvent = viewModel::onGalaxyStoreEvent,
+                                    modifier = contentModifier
+                                )
+
+                                Category.HealthMonitor -> DetailPaneHealthMonitor(
+                                    uiState = preference.other,
+                                    onEvent = viewModel::onHealthMonitorEvent,
+                                    modifier = contentModifier
+                                )
+
+                                Category.Launcher -> DetailPaneLauncher(
+                                    uiState = preference.other,
+                                    onEvent = viewModel::onLauncherEvent,
+                                    modifier = contentModifier
+                                )
+
+                                Category.Messaging -> DetailPaneMessaging(
+                                    uiState = preference.other,
+                                    onEvent = viewModel::onMessagingEvent,
+                                    modifier = contentModifier
+                                )
+
+                                Category.Notes -> DetailPaneNotes(
+                                    uiState = preference.other,
+                                    onEvent = viewModel::onNotesEvent,
+                                    modifier = contentModifier
+                                )
+
+                                Category.PhotoRetouching -> DetailPanePhotoRetouching(
+                                    uiState = preference.other,
+                                    onEvent = viewModel::onPhotoRetouchingEvent,
+                                    modifier = contentModifier
+                                )
+
+                                Category.SketchBook -> DetailPaneSketchBook(
+                                    uiState = preference.other,
+                                    onEvent = viewModel::onSketchBookEvent,
+                                    modifier = contentModifier
+                                )
+
+                                Category.SPen -> DetailPaneSPen(
+                                    uiState = preference.other,
+                                    onEvent = viewModel::onSPenEvent,
+                                    modifier = contentModifier
+                                )
+
+                                Category.ThemeCenter -> DetailPaneThemeCenter(
+                                    uiState = preference.other,
+                                    onEvent = viewModel::onThemeCenterEvent,
+                                    modifier = contentModifier
+                                )
+
+                                Category.Video -> DetailPaneVideo(
+                                    uiState = preference.other,
+                                    onEvent = viewModel::onVideoEvent,
+                                    modifier = contentModifier
+                                )
+
+                                Category.WatchManager -> DetailPaneWatchManager(
+                                    uiState = preference.other,
+                                    onEvent = viewModel::onWatchManagerEvent,
+                                    modifier = contentModifier
+                                )
+
+                                Category.Weather -> DetailPaneWeather(
+                                    uiState = preference.other,
+                                    onEvent = viewModel::onWeatherEvent,
                                     modifier = contentModifier
                                 )
 

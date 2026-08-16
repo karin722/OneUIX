@@ -22,6 +22,7 @@ object Package {
     const val SYSTEMUI = "com.android.systemui"
     const val TELEPHONYUI = "com.samsung.android.app.telephonyui"
     const val THEME_CENTER = "com.samsung.android.themecenter"
+    const val TRANSLATION = "com.samsung.android.service.airviewdictionary"
     const val WATCH_MANAGER = "com.samsung.android.app.watchmanager"
     const val WEATHER = "com.sec.android.daemonapp"
     const val VIDEO = "com.samsung.android.video"

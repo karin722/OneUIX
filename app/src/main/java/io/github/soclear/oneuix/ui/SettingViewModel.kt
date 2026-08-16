@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import io.github.soclear.oneuix.R
 import io.github.soclear.oneuix.data.IgnoreUnknownKeysJson
 import io.github.soclear.oneuix.data.Preference
 import io.github.soclear.oneuix.ui.category.Category
@@ -27,20 +26,23 @@ import java.io.OutputStream
 class SettingViewModel(application: Application) : ViewModel() {
     val categoryAppInfoList: StateFlow<List<CategoryAppInfo>> = flow {
         val packageManager = application.packageManager
-        val categoryAppInfoList = Category.preferenceEntries.mapNotNull { category ->
+        val fallbackIcon = application.applicationInfo
+            .loadIcon(packageManager)
+            .toBitmap()
+            .asImageBitmap()
+        val categoryAppInfoList = Category.preferenceEntries.map { category ->
             val applicationInfo = try {
                 packageManager.getApplicationInfo(category.packageName, 0)
             } catch (_: PackageManager.NameNotFoundException) {
-                return@mapNotNull null
+                null
             }
-            val label = if (category == Category.Other) {
-                application.getString(R.string.other)
-            } else {
-                applicationInfo.loadLabel(packageManager).toString()
-            }
-            val icon = applicationInfo.loadIcon(packageManager).toBitmap().asImageBitmap()
-            CategoryAppInfo(category, label, icon)
-        }
+            val label = applicationInfo?.loadLabel(packageManager)?.toString()
+                ?: category.packageName
+            val icon = applicationInfo?.loadIcon(packageManager)?.toBitmap()?.asImageBitmap()
+                ?: fallbackIcon
+            (applicationInfo != null) to CategoryAppInfo(category, label, icon)
+        }.partition { it.first }
+            .let { (installed, missing) -> (installed + missing).map { it.second } }
         emit(categoryAppInfoList)
     }.flowOn(Dispatchers.IO).stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
@@ -60,7 +62,7 @@ class SettingViewModel(application: Application) : ViewModel() {
 
     /**
      * カテゴリ 1 つ分の設定だけを初期値に戻す。
-     * 他のカテゴリの設定には触れないので、誤って全部消えることがない。
+     * 保存先が 1 対 1 で対応するカテゴリ（[Category.resettable]）だけを対象にする。
      */
     fun resetCategory(category: Category) {
         updateData { preference ->
@@ -70,8 +72,7 @@ class SettingViewModel(application: Application) : ViewModel() {
                 Category.Settings -> preference.copy(settings = Preference.Settings())
                 Category.Call -> preference.copy(call = Preference.Call())
                 Category.Camera -> preference.copy(camera = Preference.Camera())
-                Category.Other -> preference.copy(other = Preference.Other())
-                Category.About -> preference
+                else -> preference
             }
         }
     }

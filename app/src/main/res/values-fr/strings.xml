@@ -170,12 +170,6 @@
     <string name="group_display">Affichage</string>
     <string name="group_information">Informations affichées</string>
     <string name="group_customization">Personnalisation</string>
-    <string name="group_store_and_apps">Store et applications</string>
-    <string name="group_system_apps">Applications système</string>
-    <string name="group_samsung_apps">Applications Samsung</string>
-    <string name="group_region_unlock">Restrictions régionales</string>
-    <string name="group_home_screen">Écran d\'accueil</string>
-    <string name="group_watch">Galaxy Watch</string>
     <string name="group_call_recording">Enregistrement des appels</string>
     <string name="group_call_display">Affichage du journal d\'appels</string>
     <string name="group_call_link">Appareils liés</string>
@@ -213,4 +207,12 @@
     <string name="batteryLevelTextSizeScale_title">Taille du texte</string>
     <string name="about_contributor">Contributeur</string>
     <string name="batteryLevelTextOffsetDp_title">Position verticale (valeur positive vers le haut)</string>
+    <string name="notification">Notification</string>
+    <string name="status_bar">Barre d\'état</string>
+    <string name="setStatusBarClockTextScale_title">Définir le facteur d\'échelle de l\'horloge de la barre d\'état</string>
+    <string name="supportSharedAlbumsInHide_title">Autoriser le masquage des albums partagés</string>
+    <string name="supportSharedAlbumsInHide_summary">Plus d\'options en haut à droite -> Masquer des albums</string>
+    <string name="hideVideoEditorStudio_title">Masquer le studio de montage vidéo</string>
+    <string name="disableWritingToolkitGlobally_title">Désactiver globalement les outils d\'écriture</string>
+    <string name="disableWritingToolkitGlobally_summary">Supprime les outils d\'écriture Samsung des menus de sélection de texte de toutes les applications via le framework système</string>
 </resources>

@@ -186,12 +186,6 @@
     <string name="group_display">Display</string>
     <string name="group_information">Shown information</string>
     <string name="group_customization">Customization</string>
-    <string name="group_store_and_apps">Store and apps</string>
-    <string name="group_system_apps">System apps</string>
-    <string name="group_samsung_apps">Samsung apps</string>
-    <string name="group_region_unlock">Region restrictions</string>
-    <string name="group_home_screen">Home screen</string>
-    <string name="group_watch">Galaxy Watch</string>
     <string name="group_call_recording">Call recording</string>
     <string name="group_call_display">Call log display</string>
     <string name="group_call_link">Linked devices</string>
@@ -229,4 +223,12 @@
     <string name="batteryLevelTextSizeScale_title">Text size</string>
     <string name="about_contributor">Contributor</string>
     <string name="batteryLevelTextOffsetDp_title">Vertical position (positive moves up)</string>
+    <string name="notification">Notification</string>
+    <string name="status_bar">Status Bar</string>
+    <string name="setStatusBarClockTextScale_title">Set status bar clock scale factor</string>
+    <string name="supportSharedAlbumsInHide_title">Allow hiding shared albums</string>
+    <string name="supportSharedAlbumsInHide_summary">More options in the upper-right corner -> Hide albums</string>
+    <string name="hideVideoEditorStudio_title">Hide Video Editor Studio</string>
+    <string name="disableWritingToolkitGlobally_title">Disable Writing Toolkit globally</string>
+    <string name="disableWritingToolkitGlobally_summary">Removes Samsung Writing Toolkit from text selection menus in all apps through the System Framework</string>
 </resources>

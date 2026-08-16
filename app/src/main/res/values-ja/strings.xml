@@ -186,12 +186,6 @@
     <string name="group_display">ディスプレイ</string>
     <string name="group_information">表示される情報</string>
     <string name="group_customization">カスタマイズ</string>
-    <string name="group_store_and_apps">ストアとアプリ</string>
-    <string name="group_system_apps">システムアプリ</string>
-    <string name="group_samsung_apps">Samsung アプリ</string>
-    <string name="group_region_unlock">地域制限の解除</string>
-    <string name="group_home_screen">ホーム画面</string>
-    <string name="group_watch">Galaxy Watch</string>
     <string name="group_call_recording">通話録音</string>
     <string name="group_call_display">通話履歴の表示</string>
     <string name="group_call_link">他の端末との連携</string>

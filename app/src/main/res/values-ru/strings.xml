@@ -170,12 +170,6 @@
     <string name="group_display">Экран</string>
     <string name="group_information">Отображаемые сведения</string>
     <string name="group_customization">Настройка вида</string>
-    <string name="group_store_and_apps">Магазин и приложения</string>
-    <string name="group_system_apps">Системные приложения</string>
-    <string name="group_samsung_apps">Приложения Samsung</string>
-    <string name="group_region_unlock">Региональные ограничения</string>
-    <string name="group_home_screen">Главный экран</string>
-    <string name="group_watch">Galaxy Watch</string>
     <string name="group_call_recording">Запись звонков</string>
     <string name="group_call_display">Отображение журнала вызовов</string>
     <string name="group_call_link">Связанные устройства</string>
@@ -213,4 +207,12 @@
     <string name="batteryLevelTextSizeScale_title">Размер текста</string>
     <string name="about_contributor">Участник</string>
     <string name="batteryLevelTextOffsetDp_title">Положение по вертикали (плюс — вверх)</string>
+    <string name="notification">Уведомления</string>
+    <string name="status_bar">Строка состояния</string>
+    <string name="setStatusBarClockTextScale_title">Масштаб часов в строке состояния</string>
+    <string name="supportSharedAlbumsInHide_title">Разрешить скрывать общие альбомы</string>
+    <string name="supportSharedAlbumsInHide_summary">Дополнительные параметры в правом верхнем углу -> Скрыть альбомы</string>
+    <string name="hideVideoEditorStudio_title">Скрыть студию видеомонтажа</string>
+    <string name="disableWritingToolkitGlobally_title">Отключить инструменты для письма глобально</string>
+    <string name="disableWritingToolkitGlobally_summary">Удаляет инструменты для письма Samsung из меню выделения текста во всех приложениях через системный фреймворк</string>
 </resources>
