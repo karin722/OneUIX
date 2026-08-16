@@ -212,4 +212,5 @@
     <string name="batteryLevelTextMarginStartDp_title">아이콘과 숫자 사이 간격</string>
     <string name="batteryLevelTextSizeScale_title">글자 크기</string>
     <string name="about_contributor">기여자</string>
+    <string name="batteryLevelTextOffsetDp_title">상하 위치 (양수는 위로)</string>
 </resources>

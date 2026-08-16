@@ -228,4 +228,5 @@
     <string name="batteryLevelTextMarginStartDp_title">アイコンと数値の間隔</string>
     <string name="batteryLevelTextSizeScale_title">文字サイズ</string>
     <string name="about_contributor">コントリビューター</string>
+    <string name="batteryLevelTextOffsetDp_title">上下位置（正の値で上へ）</string>
 </resources>

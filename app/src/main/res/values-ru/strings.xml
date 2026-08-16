@@ -212,4 +212,5 @@
     <string name="batteryLevelTextMarginStartDp_title">Отступ между значком и числом</string>
     <string name="batteryLevelTextSizeScale_title">Размер текста</string>
     <string name="about_contributor">Участник</string>
+    <string name="batteryLevelTextOffsetDp_title">Положение по вертикали (плюс — вверх)</string>
 </resources>

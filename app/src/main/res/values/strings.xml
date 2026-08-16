@@ -228,4 +228,5 @@
     <string name="batteryLevelTextMarginStartDp_title">Gap between the icon and the number</string>
     <string name="batteryLevelTextSizeScale_title">Text size</string>
     <string name="about_contributor">Contributor</string>
+    <string name="batteryLevelTextOffsetDp_title">Vertical position (positive moves up)</string>
 </resources>

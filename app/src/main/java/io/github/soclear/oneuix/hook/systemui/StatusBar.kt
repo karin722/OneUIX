@@ -39,6 +39,9 @@ import java.util.WeakHashMap
 import kotlin.math.roundToInt
 
 object StatusBar {
+    /** [LinearLayout.LayoutParams.gravity] の「未指定」。 */
+    private const val UNSPECIFIED_GRAVITY = -1
+
     /**
      * 追跡できた時計ビュー。
      *
@@ -404,6 +407,7 @@ object StatusBar {
         percentSignScale: Float = 1f,
         marginStartDp: Float = 4f,
         textSizeScale: Float = 1f,
+        verticalOffsetDp: Float = 0f,
     ) {
         if (loadPackageParam.packageName != Package.SYSTEMUI || ONE_UI_VERSION < 70000) return
         trackStatusBarClock(loadPackageParam)
@@ -436,7 +440,10 @@ object StatusBar {
                                     )
                                 )
                             }
-                            moveAfterBatteryIcon(batteryMeterView, textView, marginStartDp)
+                            layOutBatteryLevelText(
+                                batteryMeterView, textView, marginStartDp, verticalOffsetDp
+                            )
+                            moveAfterBatteryIcon(batteryMeterView, textView)
                             applyStatusBarTextAppearance(
                                 batteryMeterView, textView, textSizeScale
                             )
@@ -484,12 +491,7 @@ object StatusBar {
      * 系统会在配置变化等时机重新添加自己的子视图，导致我们的文字被挤到左边，
      * 因此每次刷新都重新确认一次顺序，位置不对时才移动，避免无谓的重新布局。
      */
-    private fun moveAfterBatteryIcon(
-        batteryMeterView: ViewGroup,
-        textView: TextView,
-        marginStartDp: Float,
-    ) {
-        applyBatteryLevelTextMargin(textView, marginStartDp)
+    private fun moveAfterBatteryIcon(batteryMeterView: ViewGroup, textView: TextView) {
         val iconView = runCatching {
             getObjectField(batteryMeterView, "mBatteryIconView") as? View
         }.getOrNull()
@@ -516,14 +518,41 @@ object StatusBar {
     }
 
     /**
-     * アイコンと数値の間隔。負の値まで許して、アイコン側の余白が広い機種でも詰められるようにする。
+     * 電量テキストの配置。
+     *
+     * 上下位置は、同じ [LinearLayout] に並んでいる純正の電量テキスト
+     * （`mBatteryPercentView`）の配置をそのまま真似るのが確実。時計と揃うように
+     * Samsung 側が調整済みだからで、これを写せば時計とも高さが揃う。
+     * 純正のビューが無い場合だけ、水平 [LinearLayout] の既定（上寄せ）を打ち消して
+     * 上下中央に置く。
+     *
+     * @param marginStartDp アイコンとの間隔。アイコン側の余白が広い機種で詰められるよう負の値も許す
+     * @param verticalOffsetDp 微調整。正の値で上へ。レイアウトを動かさない translationY で効かせる
      */
-    private fun applyBatteryLevelTextMargin(textView: TextView, marginStartDp: Float) {
-        val marginPx = (marginStartDp * textView.resources.displayMetrics.density).roundToInt()
-        val params = textView.layoutParams as? ViewGroup.MarginLayoutParams ?: return
-        if (params.marginStart == marginPx) return
-        params.marginStart = marginPx
+    private fun layOutBatteryLevelText(
+        batteryMeterView: ViewGroup,
+        textView: TextView,
+        marginStartDp: Float,
+        verticalOffsetDp: Float,
+    ) {
+        val density = textView.resources.displayMetrics.density
+        val percentView = runCatching {
+            getObjectField(batteryMeterView, "mBatteryPercentView") as? TextView
+        }.getOrNull()
+        val referenceParams = percentView?.layoutParams as? LinearLayout.LayoutParams
+
+        val params = textView.layoutParams as? LinearLayout.LayoutParams ?: return
+        params.gravity = referenceParams?.gravity?.takeIf { it != UNSPECIFIED_GRAVITY }
+            ?: Gravity.CENTER_VERTICAL
+        params.height = referenceParams?.height ?: ViewGroup.LayoutParams.WRAP_CONTENT
+        params.marginStart = (marginStartDp * density).roundToInt()
         textView.layoutParams = params
+
+        percentView?.let {
+            textView.includeFontPadding = it.includeFontPadding
+            textView.setPaddingRelative(0, it.paddingTop, 0, it.paddingBottom)
+        }
+        textView.translationY = -verticalOffsetDp * density
     }
 
     /**

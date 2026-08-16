@@ -343,6 +343,9 @@ fun DetailPaneSystemUI(
                         var textSizeScale by remember {
                             mutableFloatStateOf(uiState.statusBar.batteryLevelTextSizeScale)
                         }
+                        var textOffsetDp by remember {
+                            mutableFloatStateOf(uiState.statusBar.batteryLevelTextOffsetDp)
+                        }
 
                         SwitchItem(
                             icon = ImageVector.vectorResource(id = R.drawable.battery),
@@ -441,6 +444,33 @@ fun DetailPaneSystemUI(
                                     SystemUIEvent.StatusBar.BatteryLevelTextMarginStartDp(
                                         marginStartDp
                                     )
+                                )
+                            }
+                        )
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    text = stringResource(
+                                        id = R.string.batteryLevelTextOffsetDp_title
+                                    )
+                                )
+                            },
+                            supportingContent = { Text(text = "%.1fdp".format(textOffsetDp)) },
+                            leadingContent = {
+                                Icon(
+                                    ImageVector.vectorResource(id = R.drawable.padding),
+                                    contentDescription = null
+                                )
+                            }
+                        )
+                        Slider(
+                            value = textOffsetDp,
+                            onValueChange = { textOffsetDp = it },
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            valueRange = -8f..8f,
+                            onValueChangeFinished = {
+                                onEvent(
+                                    SystemUIEvent.StatusBar.BatteryLevelTextOffsetDp(textOffsetDp)
                                 )
                             }
                         )
@@ -1382,6 +1412,9 @@ sealed interface SystemUIEvent {
         value class BatteryLevelTextSizeScale(val value: Float) : StatusBar
 
         @JvmInline
+        value class BatteryLevelTextOffsetDp(val value: Float) : StatusBar
+
+        @JvmInline
         value class SupportRealTimeNetworkSpeed(val value: Boolean) : StatusBar
 
         @JvmInline
@@ -1747,6 +1780,16 @@ private fun SettingViewModel.onStatusBarEvent(event: SystemUIEvent.StatusBar) {
                     systemUI = preference.systemUI.copy(
                         statusBar = preference.systemUI.statusBar.copy(
                             batteryLevelTextSizeScale = event.value
+                        )
+                    )
+                )
+            }
+
+            is SystemUIEvent.StatusBar.BatteryLevelTextOffsetDp -> {
+                preference.copy(
+                    systemUI = preference.systemUI.copy(
+                        statusBar = preference.systemUI.statusBar.copy(
+                            batteryLevelTextOffsetDp = event.value
                         )
                     )
                 )

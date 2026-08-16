@@ -220,4 +220,5 @@
     <string name="batteryLevelTextMarginStartDp_title">图标与数字的间距</string>
     <string name="batteryLevelTextSizeScale_title">文字大小</string>
     <string name="about_contributor">贡献者</string>
+    <string name="batteryLevelTextOffsetDp_title">垂直位置（正值向上）</string>
 </resources>
