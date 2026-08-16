@@ -209,4 +209,5 @@
     <string name="about_license_summary">GNU AGPL v3</string>
     <string name="about_unknown">Неизвестно</string>
     <string name="cancel">Отмена</string>
+    <string name="batteryLevelTextMarginStartDp_title">Отступ между значком и числом</string>
 </resources>

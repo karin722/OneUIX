@@ -51,6 +51,7 @@ data class Preference(
             val hideBatteryLevelTextPercentageSign: Boolean = false,
             val hideBatteryLevelTextChargingIcon: Boolean = false,
             val batteryLevelTextPercentSignScale: Float = 1f,
+            val batteryLevelTextMarginStartDp: Float = 4f,
             val supportRealTimeNetworkSpeed: Boolean = true,
             val showSeparateUpDownNetworkSpeeds: Boolean = false,
             val setStatusBarClockFormat: Boolean = false,

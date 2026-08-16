@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,11 +40,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
@@ -77,6 +81,8 @@ fun ListPaneCategory(
     val scrollBehavior =
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     var query by rememberSaveable { mutableStateOf("") }
+    var searchActive by rememberSaveable { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
 
     val context = LocalContext.current
     val searchableSettings = remember(context) {
@@ -119,6 +125,8 @@ fun ListPaneCategory(
                 SearchField(
                     query = query,
                     onQueryChange = { query = it },
+                    active = searchActive,
+                    onActiveChange = { searchActive = it },
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
@@ -137,7 +145,11 @@ fun ListPaneCategory(
                     items(results, key = { it.entry.titleRes }) { result ->
                         SearchResultItem(
                             result = result,
-                            onClick = { onSearchResultClick(result.entry, result.title) }
+                            onClick = {
+                                // 結果を開くときはキーボードを閉じる
+                                focusManager.clearFocus()
+                                onSearchResultClick(result.entry, result.title)
+                            }
                         )
                     }
                 }
@@ -198,28 +210,75 @@ private fun OverflowMenu(onBackup: () -> Unit, onRestore: () -> Unit) {
     }
 }
 
+/**
+ * 検索欄。
+ *
+ * 未使用時は入力欄を「置かない」。Compose は最初のフォーカス可能な要素に
+ * 自動でフォーカスを渡すため、`OutlinedTextField` を常設すると起動しただけで
+ * キーボードが開いてしまう。タップされてから入力欄に差し替える。
+ */
 @Composable
 private fun SearchField(
     query: String,
     onQueryChange: (String) -> Unit,
+    active: Boolean,
+    onActiveChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+
+    if (!active) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            modifier = modifier
+                .fillMaxWidth()
+                .clickable { onActiveChange(true) }
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    ImageVector.vectorResource(id = R.drawable.search),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.size(12.dp))
+                Text(
+                    text = stringResource(id = R.string.search_settings),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        return
+    }
+
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .focusRequester(focusRequester),
         placeholder = { Text(text = stringResource(id = R.string.search_settings)) },
         leadingIcon = {
             Icon(ImageVector.vectorResource(id = R.drawable.search), contentDescription = null)
         },
         trailingIcon = {
-            if (query.isNotEmpty()) {
-                IconButton(onClick = { onQueryChange("") }) {
-                    Icon(
-                        ImageVector.vectorResource(id = R.drawable.close),
-                        contentDescription = stringResource(id = R.string.search_clear)
-                    )
+            IconButton(
+                onClick = {
+                    onQueryChange("")
+                    focusManager.clearFocus()
+                    onActiveChange(false)
                 }
+            ) {
+                Icon(
+                    ImageVector.vectorResource(id = R.drawable.close),
+                    contentDescription = stringResource(id = R.string.search_clear)
+                )
             }
         },
         singleLine = true,

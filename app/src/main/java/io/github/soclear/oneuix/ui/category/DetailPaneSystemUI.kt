@@ -337,6 +337,9 @@ fun DetailPaneSystemUI(
                         var percentSignScale by remember {
                             mutableFloatStateOf(uiState.statusBar.batteryLevelTextPercentSignScale)
                         }
+                        var marginStartDp by remember {
+                            mutableFloatStateOf(uiState.statusBar.batteryLevelTextMarginStartDp)
+                        }
 
                         SwitchItem(
                             icon = ImageVector.vectorResource(id = R.drawable.battery),
@@ -382,6 +385,35 @@ fun DetailPaneSystemUI(
                                 )
                             }
                         }
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    text = stringResource(
+                                        id = R.string.batteryLevelTextMarginStartDp_title
+                                    )
+                                )
+                            },
+                            supportingContent = { Text(text = "%.1fdp".format(marginStartDp)) },
+                            leadingContent = {
+                                Icon(
+                                    ImageVector.vectorResource(id = R.drawable.padding),
+                                    contentDescription = null
+                                )
+                            }
+                        )
+                        Slider(
+                            value = marginStartDp,
+                            onValueChange = { marginStartDp = it },
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            valueRange = -8f..16f,
+                            onValueChangeFinished = {
+                                onEvent(
+                                    SystemUIEvent.StatusBar.BatteryLevelTextMarginStartDp(
+                                        marginStartDp
+                                    )
+                                )
+                            }
+                        )
                         SwitchItem(
                             icon = ImageVector.vectorResource(id = R.drawable.battery),
                             title = stringResource(id = R.string.hideBatteryLevelTextChargingIcon_title),
@@ -1314,6 +1346,9 @@ sealed interface SystemUIEvent {
         value class BatteryLevelTextPercentSignScale(val value: Float) : StatusBar
 
         @JvmInline
+        value class BatteryLevelTextMarginStartDp(val value: Float) : StatusBar
+
+        @JvmInline
         value class SupportRealTimeNetworkSpeed(val value: Boolean) : StatusBar
 
         @JvmInline
@@ -1659,6 +1694,16 @@ private fun SettingViewModel.onStatusBarEvent(event: SystemUIEvent.StatusBar) {
                     systemUI = preference.systemUI.copy(
                         statusBar = preference.systemUI.statusBar.copy(
                             batteryLevelTextPercentSignScale = event.value
+                        )
+                    )
+                )
+            }
+
+            is SystemUIEvent.StatusBar.BatteryLevelTextMarginStartDp -> {
+                preference.copy(
+                    systemUI = preference.systemUI.copy(
+                        statusBar = preference.systemUI.statusBar.copy(
+                            batteryLevelTextMarginStartDp = event.value
                         )
                     )
                 )
