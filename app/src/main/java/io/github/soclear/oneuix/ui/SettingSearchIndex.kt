@@ -1,0 +1,113 @@
+package io.github.soclear.oneuix.ui
+
+import androidx.annotation.StringRes
+import io.github.soclear.oneuix.R
+import io.github.soclear.oneuix.ui.category.Category
+
+/**
+ * 検索でヒットする設定項目 1 件分。
+ *
+ * @param titleRes 項目のタイトル。表示中の言語で解決した文字列がそのまま
+ *   [io.github.soclear.oneuix.ui.component.SettingsPane] のスクロール位置のキーになる
+ */
+data class SettingSearchEntry(
+    val category: Category,
+    @param:StringRes val groupRes: Int,
+    @param:StringRes val titleRes: Int,
+    @param:StringRes val summaryRes: Int?,
+)
+
+/**
+ * 全設定項目の一覧。各詳細画面のグループ構成をそのまま写したもので、
+ * 画面に項目を足したらここにも 1 行足す。
+ */
+val SettingSearchIndex: List<SettingSearchEntry> = listOf(
+    SettingSearchEntry(Category.Android, R.string.group_lock_screen, R.string.disablePinVerifyPer72h_title, null),
+    SettingSearchEntry(Category.Android, R.string.group_apps_notifications, R.string.modifyMaxNeverKilledAppNum_title, null),
+    SettingSearchEntry(Category.Android, R.string.group_apps_notifications, R.string.setBlockableNotificationChannel_title, R.string.setBlockableNotificationChannel_summary),
+    SettingSearchEntry(Category.Android, R.string.group_apps_notifications, R.string.supportAppJumpBlock_title, R.string.supportAppJumpBlock_summary),
+    SettingSearchEntry(Category.Android, R.string.group_system_behavior, R.string.allowAllRotation_title, R.string.allowAllRotation_summary),
+    SettingSearchEntry(Category.Android, R.string.group_system_behavior, R.string.liftFcmNetworkLimit_title, R.string.liftFcmNetworkLimit_summary),
+    SettingSearchEntry(Category.Android, R.string.group_system_behavior, R.string.disableScreenWakeOnPowerUnplugged_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_layout, R.string.statusBarLeftPaddingDp_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_layout, R.string.statusBarRightPaddingDp_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_battery, R.string.setBatteryIconWidthScale_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_battery, R.string.setBatteryIconHeightScale_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_battery, R.string.hideBatteryPercentageSign_title, R.string.hideBatteryPercentageSign_summary),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_battery, R.string.hideBatteryIcon_title, R.string.hideBatteryIcon_summary),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_battery, R.string.useCircleBatteryIcon_title, R.string.useCircleBatteryIcon_summary),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_battery, R.string.addBatteryLevelText_title, R.string.addBatteryLevelText_summary),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_battery, R.string.hideBatteryLevelTextPercentageSign_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_battery, R.string.hideBatteryLevelTextChargingIcon_title, R.string.hideBatteryLevelTextChargingIcon_summary),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_network, R.string.supportRealTimeNetworkSpeed_title, R.string.supportRealTimeNetworkSpeed_summary),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_network, R.string.showSeparateUpDownNetworkSpeeds_title, R.string.showSeparateUpDownNetworkSpeeds_summary),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_clock, R.string.setStatusBarClockFormat_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_clock, R.string.appendStatusBarClockDate_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_clock, R.string.statusBarClockDateBeforeTime_title, R.string.statusBarClockDateBeforeTime_summary),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_clock, R.string.updateStatusBarClockEverySecond_title, R.string.updateStatusBarClockEverySecond_summary),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_icons, R.string.hideSecureFolderStatusBarIcon_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_icons, R.string.restoreBluetoothStatusBarIcon_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_icons, R.string.physicalEsimAdapterWorkaround_title, R.string.physicalEsimAdapterWorkaround_summary),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_icons, R.string.physicalEsimAdapterSimSlot_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_icons, R.string.doubleTapStatusBarToSleep_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_icons, R.string.setStatusBarMaxNotificationIcons_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_icons, R.string.setCustomCarrierName_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_status_bar_icons, R.string.hideLockscreenStatusBar_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.qs, R.string.setQsClockMonospaced_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.qs, R.string.hideDeviceControlQsTile_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.qs, R.string.hideSmartViewQsTile_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.qs, R.string.turnOn5gQsTile_title, R.string.turnOn5gQsTile_summary),
+    SettingSearchEntry(Category.SystemUI, R.string.group_qs_hide, R.string.hideQsBarMediaPlayer_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_qs_hide, R.string.hideQsBarNearbyDevicesAndDeviceControl_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_qs_hide, R.string.hideQsBarSecurityFooter_title, R.string.hideQsBarSecurityFooter_summary),
+    SettingSearchEntry(Category.SystemUI, R.string.group_qs_hide, R.string.hideQsBarDataUsage_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_qs_hide, R.string.hideQsBarSmartViewAndModes_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_qs_panel, R.string.alwaysExpandQsTileChunk_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_qs_panel, R.string.alwaysShowTimeDateOnQs_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_qs_panel, R.string.addBrightnessProgressToQsBar_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_qs_panel, R.string.addVolumeProgressToQsBar_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_qs_panel, R.string.showTraditionalChineseDateOnQS_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_qs_panel, R.string.modifyQSClockTextSize_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.aod, R.string.hideAODStatusBar_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.aod, R.string.aodLockSupportLunar_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_power_menu, R.string.customPowerMenu_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_notifications_sound, R.string.disableScreenshotCaptureSound_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_notifications_sound, R.string.hideOngoingActivityMedia_title, null),
+    SettingSearchEntry(Category.SystemUI, R.string.group_notifications_sound, R.string.disableNotificationGrouping_title, R.string.disableNotificationGrouping_summary),
+    SettingSearchEntry(Category.SystemUI, R.string.group_notifications_sound, R.string.autoExpandNotifications_title, null),
+    SettingSearchEntry(Category.Settings, R.string.group_display, R.string.showForcePeakRefreshRatePreference_title, R.string.showForcePeakRefreshRatePreference_summary),
+    SettingSearchEntry(Category.Settings, R.string.group_display, R.string.supportOutdoorMode_title, null),
+    SettingSearchEntry(Category.Settings, R.string.group_information, R.string.showMoreBatteryInfo_title, R.string.showMoreBatteryInfo_summary),
+    SettingSearchEntry(Category.Settings, R.string.group_information, R.string.showPackageInfo_title, R.string.showPackageInfo_summary),
+    SettingSearchEntry(Category.Settings, R.string.group_information, R.string.showWiFiLinkSpeed_title, R.string.showWiFiLinkSpeed_summary),
+    SettingSearchEntry(Category.Settings, R.string.group_customization, R.string.supportAnyFont_title, null),
+    SettingSearchEntry(Category.Settings, R.string.group_customization, R.string.supportAutoPowerOnOff_title, R.string.supportAutoPowerOnOff_summary),
+    SettingSearchEntry(Category.Settings, R.string.group_customization, R.string.spoofPhoneStatusAsOfficial_title, R.string.spoofPhoneStatusAsOfficial_summary),
+    SettingSearchEntry(Category.Call, R.string.group_call_recording, R.string.supportVoiceCallRecording_title, null),
+    SettingSearchEntry(Category.Call, R.string.group_call_recording, R.string.preferRecordingButton_title, null),
+    SettingSearchEntry(Category.Call, R.string.group_call_display, R.string.showGeocodedLocationInRecentCall_title, null),
+    SettingSearchEntry(Category.Call, R.string.group_call_display, R.string.isOpStyleCHN_title, null),
+    SettingSearchEntry(Category.Call, R.string.group_call_link, R.string.supportCallAndTextOnOtherDevices_title, R.string.supportCallAndTextOnOtherDevices_summary),
+    SettingSearchEntry(Category.Camera, R.string.group_camera, R.string.supportAllCameraMenu_title, R.string.supportAllCameraMenu_summary),
+    SettingSearchEntry(Category.Camera, R.string.group_camera, R.string.disableCameraTemperatureCheck_title, null),
+    SettingSearchEntry(Category.Other, R.string.group_store_and_apps, R.string.blockGalaxyStoreAds_title, R.string.blockGalaxyStoreAds_summary),
+    SettingSearchEntry(Category.Other, R.string.group_store_and_apps, R.string.makeAllUserAppsAvailable_title, null),
+    SettingSearchEntry(Category.Other, R.string.group_system_apps, R.string.setWeatherProviderCN_title, null),
+    SettingSearchEntry(Category.Other, R.string.group_system_apps, R.string.showMemoryUsageInRecents_title, null),
+    SettingSearchEntry(Category.Other, R.string.group_system_apps, R.string.showMorePlaybackSpeeds_title, R.string.showMorePlaybackSpeeds_summary),
+    SettingSearchEntry(Category.Other, R.string.group_system_apps, R.string.redirect_custom_tab_title, R.string.redirect_custom_tab_summary),
+    SettingSearchEntry(Category.Other, R.string.group_samsung_apps, R.string.supportAllGallerySettings_title, R.string.supportAllGallerySettings_summary),
+    SettingSearchEntry(Category.Other, R.string.group_samsung_apps, R.string.supportAllNotesFeatures_title, R.string.supportAllNotesFeatures_summary),
+    SettingSearchEntry(Category.Other, R.string.group_samsung_apps, R.string.enableChineseHolidayDisplay_title, null),
+    SettingSearchEntry(Category.Other, R.string.group_samsung_apps, R.string.supportBlockMessage_title, null),
+    SettingSearchEntry(Category.Other, R.string.group_samsung_apps, R.string.setThemeTrialNeverExpired_title, null),
+    SettingSearchEntry(Category.Other, R.string.group_region_unlock, R.string.spoofBrowserCountryCodeToUS_title, R.string.spoofBrowserCountryCodeToUS_summary),
+    SettingSearchEntry(Category.Other, R.string.group_region_unlock, R.string.noAIWatermark_title, R.string.noAIWatermark_summary),
+    SettingSearchEntry(Category.Other, R.string.group_region_unlock, R.string.bypassHealthMonitorCountryCheck_title, R.string.bypassHealthMonitorCountryCheck_summary),
+    SettingSearchEntry(Category.Other, R.string.group_region_unlock, R.string.useSPenGoogleTranslate_title, R.string.useSPenGoogleTranslate_summary),
+    SettingSearchEntry(Category.Other, R.string.group_home_screen, R.string.hideAppsSearchBar_title, null),
+    SettingSearchEntry(Category.Other, R.string.group_home_screen, R.string.removeShortcutBadge_title, R.string.removeShortcutBadge_summary),
+    SettingSearchEntry(Category.Other, R.string.group_watch, R.string.watchPairing_connectionMode_title, R.string.watchPairing_connectionMode_summary),
+    SettingSearchEntry(Category.Other, R.string.group_watch, R.string.bypassWatchPairingRegionCheck_title, R.string.bypassWatchPairingRegionCheck_summary),
+    SettingSearchEntry(Category.Other, R.string.group_watch, R.string.supplementChinaWearOsGms_title, R.string.supplementChinaWearOsGms_summary),
+)

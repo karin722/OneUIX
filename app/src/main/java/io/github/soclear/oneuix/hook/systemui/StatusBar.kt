@@ -10,6 +10,7 @@ import android.os.SystemClock
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.RelativeSizeSpan
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -33,9 +34,15 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import io.github.soclear.oneuix.data.ONE_UI_VERSION
 import io.github.soclear.oneuix.data.Package
 import io.github.soclear.oneuix.hook.util.ClockTextFormatter
+import java.util.Collections
+import java.util.WeakHashMap
 import kotlin.math.roundToInt
 
 object StatusBar {
+    /** 状態バーの時計に合わせた字形をすでに適用した電量テキスト。 */
+    private val styledBatteryLevelTexts: MutableSet<TextView> =
+        Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap()))
+
     fun setStatusBarPaddingDp(loadPackageParam: LoadPackageParam, left: Float?, right: Float?) {
         if (loadPackageParam.packageName != io.github.soclear.oneuix.data.Package.SYSTEMUI ||
             left == null && right == null
@@ -413,6 +420,8 @@ object StatusBar {
                                     )
                                 )
                             }
+                            moveAfterBatteryIcon(batteryMeterView, textView)
+                            applyStatusBarTextAppearance(batteryMeterView, textView)
                             val level = getIntField(batteryMeterView, "mLevel")
                             val isCharging = callMethod(batteryMeterView, "isCharging") as Boolean
                             val suffix = if (isCharging && !hideChargingIcon) "\u26A1\uFE0E" else ""
@@ -448,6 +457,87 @@ object StatusBar {
         } catch (t: Throwable) {
             XposedBridge.log(t)
         }
+    }
+
+    /**
+     * 电量文字必须位于电池图标的右侧。
+     *
+     * `BatteryMeterView` 是水平 [LinearLayout]，所以「图标之后的下一个位置」就是图标右侧。
+     * 系统会在配置变化等时机重新添加自己的子视图，导致我们的文字被挤到左边，
+     * 因此每次刷新都重新确认一次顺序，位置不对时才移动，避免无谓的重新布局。
+     */
+    private fun moveAfterBatteryIcon(batteryMeterView: ViewGroup, textView: TextView) {
+        val iconView = runCatching {
+            getObjectField(batteryMeterView, "mBatteryIconView") as? View
+        }.getOrNull()
+        val targetIndex = if (iconView != null && iconView.parent === batteryMeterView) {
+            batteryMeterView.indexOfChild(iconView) + 1
+        } else {
+            batteryMeterView.childCount
+        }
+        val currentIndex = batteryMeterView.indexOfChild(textView)
+        if (currentIndex == targetIndex) return
+
+        val layoutParams = textView.layoutParams
+        batteryMeterView.removeView(textView)
+        // 移除后索引会前移一位，所以原本在文字之后的目标位置要相应修正。
+        val insertIndex = if (currentIndex in 0..<targetIndex) targetIndex - 1 else targetIndex
+        batteryMeterView.addView(
+            textView,
+            insertIndex.coerceIn(0, batteryMeterView.childCount),
+            layoutParams ?: LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
+    }
+
+    /**
+     * 电量文字使用与状态栏时钟完全相同的字形。
+     *
+     * 新建的 [TextView] 默认是系统的常规字重，而 One UI 的状态栏时钟使用更粗的字重，
+     * 所以不复制字形的话电量文字看起来会明显偏细。
+     * 找不到时钟时退回到系统自带的电量文字（`mBatteryPercentView`），它同样是状态栏样式。
+     */
+    private fun applyStatusBarTextAppearance(batteryMeterView: ViewGroup, textView: TextView) {
+        // ビュー階層をたどる処理なので、同じ TextView に対しては一度だけ実行する。
+        // フォントやテーマが変わったときは status bar ごと作り直されるため、取りこぼしはない。
+        if (textView in styledBatteryLevelTexts) return
+        // まだアタッチされていない等で時計が見つからない場合は、次の更新でもう一度試す。
+        val reference = findStatusBarClock(batteryMeterView)
+            ?: runCatching {
+                getObjectField(batteryMeterView, "mBatteryPercentView") as? TextView
+            }.getOrNull()
+            ?: return
+        textView.typeface = reference.typeface
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, reference.textSize)
+        textView.letterSpacing = reference.letterSpacing
+        textView.fontFeatureSettings = reference.fontFeatureSettings
+        styledBatteryLevelTexts.add(textView)
+    }
+
+    /**
+     * 状态栏时钟（`com.android.systemui.statusbar.policy.Clock`）。
+     * 电池视图从自身向上逐层查找，因此找到的一定是同一条状态栏里的时钟，
+     * 不会误取到快捷设置面板或锁屏的时钟。
+     */
+    private fun findStatusBarClock(batteryMeterView: ViewGroup): TextView? {
+        var child: View = batteryMeterView
+        while (true) {
+            val parent = child.parent as? ViewGroup ?: return null
+            findClockInChildren(parent, skip = child)?.let { return it }
+            child = parent
+        }
+    }
+
+    private fun findClockInChildren(parent: ViewGroup, skip: View?): TextView? {
+        for (index in 0..<parent.childCount) {
+            val child = parent.getChildAt(index)
+            if (child === skip) continue
+            if (child is TextView && child.javaClass.name.endsWith(".Clock")) return child
+            if (child is ViewGroup) findClockInChildren(child, skip = null)?.let { return it }
+        }
+        return null
     }
 
     /**

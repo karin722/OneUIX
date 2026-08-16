@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -20,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -37,13 +39,15 @@ fun SwitchItem(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
+    // ハイライトはリップルより下に描きたいので、クリック系より先に重ねる。
+    val anchoredModifier = modifier.settingAnchor(title)
     val listItemModifier = if (clickable) {
-        modifier.clickable(
+        anchoredModifier.clickable(
             onClick = onClick,
             role = Role.Button
         )
     } else {
-        modifier.toggleable(
+        anchoredModifier.toggleable(
             value = checked,
             onValueChange = onCheckedChange,
             role = Role.Switch,
@@ -55,6 +59,7 @@ fun SwitchItem(
     ListItem(
         headlineContent = { Text(title) },
         modifier = listItemModifier,
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         supportingContent = summary?.let { { Text(it) } },
         leadingContent = icon?.let { { Icon(it, title) } },
         trailingContent = {

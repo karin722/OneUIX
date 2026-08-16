@@ -7,16 +7,12 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -41,9 +37,12 @@ import io.github.soclear.oneuix.data.PowerMenuAction
 import io.github.soclear.oneuix.data.Preference
 import io.github.soclear.oneuix.ui.SettingViewModel
 import io.github.soclear.oneuix.ui.component.SelectItem
+import io.github.soclear.oneuix.ui.component.SettingsGroup
+import io.github.soclear.oneuix.ui.component.SettingsPane
 import io.github.soclear.oneuix.ui.component.SwitchItem
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlin.math.roundToInt
 
 private const val ESIM_ADAPTER_SIM_BOTH = 2
@@ -54,763 +53,1125 @@ fun DetailPaneSystemUI(
     onEvent: (SystemUIEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-    ) {
-        Spacer(modifier = Modifier.height(30.dp))
-        Button(
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            onClick = {
-                runCatching { Runtime.getRuntime().exec("su -c killall com.android.systemui") }
-            }
-        ) {
-            Text(text = stringResource(R.string.restartSystemUI))
-        }
-        DividerText(R.string.status_bar)
-        Column {
-            var padding by remember {
-                mutableFloatStateOf(uiState.statusBar.statusBarLeftPaddingDp)
-            }
-            var expanded by rememberSaveable { mutableStateOf(false) }
-
-            SwitchItem(
-                title = stringResource(id = R.string.statusBarLeftPaddingDp_title),
-                modifier = Modifier.animateContentSize(),
-                summary = if (uiState.statusBar.modifyStatusBarLeftPadding) {
-                    "%.1fdp".format(padding)
-                } else null,
-                icon = ImageVector.vectorResource(id = R.drawable.padding),
-                clickable = true,
-                onClick = { expanded = !expanded },
-                checked = uiState.statusBar.modifyStatusBarLeftPadding,
-                onCheckedChange = {
-                    if (it && padding == 0f) {
-                        expanded = true
-                    } else if (!it) {
-                        expanded = false
-                    }
-                    onEvent(SystemUIEvent.StatusBar.ModifyStatusBarLeftPadding(it))
-                }
-            )
-            AnimatedVisibility(expanded && uiState.statusBar.modifyStatusBarLeftPadding) {
-                Slider(
-                    value = padding,
-                    onValueChange = { padding = it },
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    valueRange = 0f..100f,
-                    onValueChangeFinished = {
-                        onEvent(SystemUIEvent.StatusBar.StatusBarLeftPaddingDp(padding))
-                    }
-                )
-            }
-        }
-        Column {
-            var padding by remember {
-                mutableFloatStateOf(uiState.statusBar.statusBarRightPaddingDp)
-            }
-            var expanded by rememberSaveable { mutableStateOf(false) }
-
-            SwitchItem(
-                title = stringResource(id = R.string.statusBarRightPaddingDp_title),
-                modifier = Modifier.animateContentSize(),
-                summary = if (uiState.statusBar.modifyStatusBarRightPadding) {
-                    "%.1fdp".format(padding)
-                } else null,
-                icon = ImageVector.vectorResource(id = R.drawable.padding),
-                clickable = true,
-                onClick = { expanded = !expanded },
-                checked = uiState.statusBar.modifyStatusBarRightPadding,
-                onCheckedChange = {
-                    if (it && padding == 0f) {
-                        expanded = true
-                    } else if (!it) {
-                        expanded = false
-                    }
-                    onEvent(SystemUIEvent.StatusBar.ModifyStatusBarRightPadding(it))
-                }
-            )
-            AnimatedVisibility(expanded && uiState.statusBar.modifyStatusBarRightPadding) {
-                Slider(
-                    value = padding,
-                    onValueChange = { padding = it },
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    valueRange = 0f..100f,
-                    onValueChangeFinished = {
-                        onEvent(SystemUIEvent.StatusBar.StatusBarRightPaddingDp(padding))
-                    }
-                )
-            }
-        }
-        Column {
-            var widthScale by remember {
-                mutableFloatStateOf(uiState.statusBar.batteryIconWidthScale)
-            }
-            var expanded by rememberSaveable { mutableStateOf(false) }
-
-            SwitchItem(
-                title = stringResource(id = R.string.setBatteryIconWidthScale_title),
-                modifier = Modifier.animateContentSize(),
-                summary = if (uiState.statusBar.setBatteryIconWidthScale) {
-                    "%.2f".format(widthScale)
-                } else null,
-                icon = ImageVector.vectorResource(id = R.drawable.battery),
-                clickable = true,
-                onClick = { expanded = !expanded },
-                checked = uiState.statusBar.setBatteryIconWidthScale,
-                onCheckedChange = {
-                    if (it && widthScale == 0f) {
-                        expanded = true
-                    } else if (!it) {
-                        expanded = false
-                    }
-                    onEvent(SystemUIEvent.StatusBar.SetBatteryIconWidthScale(it))
-                }
-            )
-            AnimatedVisibility(expanded && uiState.statusBar.setBatteryIconWidthScale) {
-                Slider(
-                    value = widthScale,
-                    onValueChange = { widthScale = it },
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    valueRange = 0.5f..2f,
-                    onValueChangeFinished = {
-                        onEvent(SystemUIEvent.StatusBar.BatteryIconWidthScale(widthScale))
-                    }
-                )
-            }
-        }
-        Column {
-            var heightScale by remember {
-                mutableFloatStateOf(uiState.statusBar.batteryIconHeightScale)
-            }
-            var expanded by rememberSaveable { mutableStateOf(false) }
-
-            SwitchItem(
-                title = stringResource(id = R.string.setBatteryIconHeightScale_title),
-                modifier = Modifier.animateContentSize(),
-                summary = if (uiState.statusBar.setBatteryIconHeightScale) {
-                    "%.2f".format(heightScale)
-                } else null,
-                icon = ImageVector.vectorResource(id = R.drawable.battery),
-                clickable = true,
-                onClick = { expanded = !expanded },
-                checked = uiState.statusBar.setBatteryIconHeightScale,
-                onCheckedChange = {
-                    if (it && heightScale == 0f) {
-                        expanded = true
-                    } else if (!it) {
-                        expanded = false
-                    }
-                    onEvent(SystemUIEvent.StatusBar.SetBatteryIconHeightScale(it))
-                }
-            )
-            AnimatedVisibility(expanded && uiState.statusBar.setBatteryIconHeightScale) {
-                Slider(
-                    value = heightScale,
-                    onValueChange = { heightScale = it },
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    valueRange = 0.5f..2f,
-                    onValueChangeFinished = {
-                        onEvent(SystemUIEvent.StatusBar.BatteryIconHeightScale(heightScale))
-                    }
-                )
-            }
-        }
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            SwitchItem(
-                icon = ImageVector.vectorResource(id = R.drawable.battery),
-                title = stringResource(id = R.string.hideBatteryPercentageSign_title),
-                summary = stringResource(id = R.string.hideBatteryPercentageSign_summary),
-                checked = uiState.statusBar.hideBatteryPercentageSign,
-                onCheckedChange = {
-                    onEvent(SystemUIEvent.StatusBar.HideBatteryPercentageSign(it))
-                }
-            )
-        }
-        SwitchItem(
-            icon = ImageVector.vectorResource(id = R.drawable.battery),
-            title = stringResource(id = R.string.hideBatteryIcon_title),
-            summary = stringResource(id = R.string.hideBatteryIcon_summary),
-            checked = uiState.statusBar.hideBatteryIcon,
-            onCheckedChange = {
-                onEvent(SystemUIEvent.StatusBar.HideBatteryIcon(it))
-            }
-        )
-        if (ONE_UI_VERSION >= 70000) {
-            SwitchItem(
-                icon = ImageVector.vectorResource(id = R.drawable.battery),
-                title = stringResource(id = R.string.addBatteryLevelText_title),
-                summary = stringResource(id = R.string.addBatteryLevelText_summary),
-                checked = uiState.statusBar.addBatteryLevelText,
-                onCheckedChange = {
-                    onEvent(SystemUIEvent.StatusBar.AddBatteryLevelText(it))
-                }
-            )
-            AnimatedVisibility(uiState.statusBar.addBatteryLevelText) {
-                Column {
-                    SwitchItem(
-                        icon = ImageVector.vectorResource(id = R.drawable.battery),
-                        title = stringResource(id = R.string.hideBatteryLevelTextPercentageSign_title),
-                        checked = uiState.statusBar.hideBatteryLevelTextPercentageSign,
-                        onCheckedChange = {
-                            onEvent(SystemUIEvent.StatusBar.HideBatteryLevelTextPercentageSign(it))
-                        }
-                    )
-                    SwitchItem(
-                        icon = ImageVector.vectorResource(id = R.drawable.battery),
-                        title = stringResource(id = R.string.hideBatteryLevelTextChargingIcon_title),
-                        checked = uiState.statusBar.hideBatteryLevelTextChargingIcon,
-                        onCheckedChange = {
-                            onEvent(SystemUIEvent.StatusBar.HideBatteryLevelTextChargingIcon(it))
-                        }
-                    )
-                }
-            }
-        }
-        SwitchItem(
-            icon = ImageVector.vectorResource(id = R.drawable.net_speed),
-            title = stringResource(id = R.string.supportRealTimeNetworkSpeed_title),
-            summary = stringResource(id = R.string.supportRealTimeNetworkSpeed_summary),
-            checked = uiState.statusBar.supportRealTimeNetworkSpeed,
-            onCheckedChange = {
-                onEvent(SystemUIEvent.StatusBar.SupportRealTimeNetworkSpeed(it))
-            }
-        )
-        SwitchItem(
-            icon = ImageVector.vectorResource(id = R.drawable.net_speed),
-            title = stringResource(id = R.string.showSeparateUpDownNetworkSpeeds_title),
-            summary = stringResource(id = R.string.showSeparateUpDownNetworkSpeeds_summary),
-            checked = uiState.statusBar.showSeparateUpDownNetworkSpeeds,
-            onCheckedChange = {
-                onEvent(SystemUIEvent.StatusBar.ShowSeparateUpDownNetworkSpeeds(it))
-            }
-        )
-        Column {
-            var expanded by rememberSaveable { mutableStateOf(false) }
-
-            SwitchItem(
-                title = stringResource(id = R.string.setStatusBarClockFormat_title),
-                modifier = Modifier.animateContentSize(),
-                summary = if (uiState.statusBar.setStatusBarClockFormat) {
-                    uiState.statusBar.statusBarClockFormat
-                } else null,
-                icon = ImageVector.vectorResource(id = R.drawable.nest_clock_farsight_digital),
-                clickable = true,
-                onClick = { expanded = !expanded },
-                checked = uiState.statusBar.setStatusBarClockFormat,
-                onCheckedChange = {
-                    if (it && uiState.statusBar.statusBarClockFormat == "HH:mm") {
-                        expanded = true
-                    } else if (!it) {
-                        expanded = false
-                    }
-                    onEvent(SystemUIEvent.StatusBar.SetStatusBarClockFormat(it))
-                }
-            )
-
-            AnimatedVisibility(expanded && uiState.statusBar.setStatusBarClockFormat) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                ) {
-                    var tempDataTimeFormat by remember {
-                        mutableStateOf(uiState.statusBar.statusBarClockFormat)
-                    }
-                    var label by remember { mutableStateOf("") }
-                    OutlinedTextField(
-                        value = tempDataTimeFormat,
-                        onValueChange = { tempDataTimeFormat = it },
-                        modifier = Modifier.weight(1f),
-                        label = { Text(text = label) }
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            var right = true
-                            label = try {
-                                DateTimeFormatter
-                                    .ofPattern(tempDataTimeFormat)
-                                    .format(LocalDateTime.now())
-                            } catch (_: Throwable) {
-                                right = false
-                                "error"
-                            }
-                            if (right) {
-                                onEvent(
-                                    SystemUIEvent.StatusBar.StatusBarClockFormat(
-                                        tempDataTimeFormat
-                                    )
-                                )
-                            }
-                        }
-                    ) {
-                        Text(text = stringResource(id = R.string.confirm))
-                    }
-                }
-            }
-        }
-        SwitchItem(
-            title = stringResource(id = R.string.updateStatusBarClockEverySecond_title),
-            summary = stringResource(id = R.string.updateStatusBarClockEverySecond_summary),
-            icon = ImageVector.vectorResource(id = R.drawable.nest_clock_farsight_digital),
-            checked = uiState.statusBar.updateStatusBarClockEverySecond,
-            onCheckedChange = {
-                onEvent(SystemUIEvent.StatusBar.UpdateStatusBarClockEverySecond(it))
-            }
-        )
-        SwitchItem(
-            icon = ImageVector.vectorResource(id = R.drawable.folder_managed),
-            title = stringResource(id = R.string.hideSecureFolderStatusBarIcon_title),
-            checked = uiState.statusBar.hideSecureFolderStatusBarIcon,
-            onCheckedChange = {
-                onEvent(SystemUIEvent.StatusBar.HideSecureFolderStatusBarIcon(it))
-            }
-        )
-        SwitchItem(
-            icon = ImageVector.vectorResource(id = R.drawable.bluetooth),
-            title = stringResource(id = R.string.restoreBluetoothStatusBarIcon_title),
-            checked = uiState.statusBar.restoreBluetoothStatusBarIcon,
-            onCheckedChange = {
-                onEvent(SystemUIEvent.StatusBar.RestoreBluetoothStatusBarIcon(it))
-            }
-        )
-        SwitchItem(
-            icon = ImageVector.vectorResource(id = R.drawable.sim_card),
-            title = stringResource(id = R.string.physicalEsimAdapterWorkaround_title),
-            summary = stringResource(id = R.string.physicalEsimAdapterWorkaround_summary),
-            checked = uiState.statusBar.physicalEsimAdapterWorkaround,
-            onCheckedChange = {
-                onEvent(SystemUIEvent.StatusBar.PhysicalEsimAdapterWorkaround(it))
-            }
-        )
-        AnimatedVisibility(uiState.statusBar.physicalEsimAdapterWorkaround) {
-            SelectItem(
-                icon = ImageVector.vectorResource(id = R.drawable.sim_card),
-                title = stringResource(id = R.string.physicalEsimAdapterSimSlot_title),
-                entries = listOf(
-                    stringResource(id = R.string.sim_slot_1),
-                    stringResource(id = R.string.sim_slot_2),
-                    stringResource(id = R.string.sim_slot_both)
-                ),
-                selectedIndex = uiState.statusBar.physicalEsimAdapterSimSlot.coerceIn(
-                    0,
-                    ESIM_ADAPTER_SIM_BOTH
-                ),
-                onSelectedIndexChange = {
-                    onEvent(SystemUIEvent.StatusBar.PhysicalEsimAdapterSimSlot(it))
-                }
-            )
-        }
-        SwitchItem(
-            icon = ImageVector.vectorResource(id = R.drawable.mobile_screensaver),
-            title = stringResource(id = R.string.doubleTapStatusBarToSleep_title),
-            checked = uiState.statusBar.doubleTapStatusBarToSleep,
-            onCheckedChange = {
-                onEvent(SystemUIEvent.StatusBar.DoubleTapStatusBarToSleep(it))
-            }
-        )
-        Column {
-            var max by remember {
-                mutableIntStateOf(uiState.statusBar.statusBarMaxNotificationIcons)
-            }
-            var expanded by rememberSaveable { mutableStateOf(false) }
-
-            SwitchItem(
-                title = stringResource(id = R.string.setStatusBarMaxNotificationIcons_title),
-                modifier = Modifier.animateContentSize(),
-                summary = if (uiState.statusBar.modifyStatusBarMaxNotificationIcons) " $max" else null,
-                icon = ImageVector.vectorResource(id = R.drawable.notifications),
-                clickable = true,
-                onClick = { expanded = !expanded },
-                checked = uiState.statusBar.modifyStatusBarMaxNotificationIcons,
-                onCheckedChange = {
-                    if (it && max == 4) {
-                        expanded = true
-                    } else if (!it) {
-                        expanded = false
-                    }
-                    onEvent(SystemUIEvent.StatusBar.ModifyStatusBarMaxNotificationIcons(it))
-                }
-            )
-            AnimatedVisibility(expanded && uiState.statusBar.modifyStatusBarMaxNotificationIcons) {
-                Slider(
-                    value = max.toFloat(),
-                    onValueChange = { max = it.roundToInt() },
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    valueRange = 4f..20f,
-                    steps = 15,
-                    onValueChangeFinished = {
-                        onEvent(SystemUIEvent.StatusBar.StatusBarMaxNotificationIcons(max))
-                    }
-                )
-            }
-        }
-        Column {
-            var expanded by rememberSaveable { mutableStateOf(false) }
-
-            SwitchItem(
-                title = stringResource(id = R.string.setCustomCarrierName_title),
-                modifier = Modifier.animateContentSize(),
-                summary = if (uiState.statusBar.setCustomCarrierName) {
-                    uiState.statusBar.customCarrierName
-                } else null,
-                icon = ImageVector.vectorResource(id = R.drawable.sim_card),
-                clickable = true,
-                onClick = { expanded = !expanded },
-                checked = uiState.statusBar.setCustomCarrierName,
-                onCheckedChange = {
-                    if (it && uiState.statusBar.customCarrierName.isEmpty()) {
-                        expanded = true
-                    } else if (!it) {
-                        expanded = false
-                    }
-                    onEvent(SystemUIEvent.StatusBar.SetCustomCarrierName(it))
-                }
-            )
-
-            AnimatedVisibility(expanded && uiState.statusBar.setCustomCarrierName) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                ) {
-                    var tempCustomCarrierName by remember {
-                        mutableStateOf(uiState.statusBar.customCarrierName)
-                    }
-
-                    OutlinedTextField(
-                        value = tempCustomCarrierName,
-                        onValueChange = { tempCustomCarrierName = it },
-                        modifier = Modifier.weight(1f),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            onEvent(
-                                SystemUIEvent.StatusBar.CustomCarrierName(
-                                    tempCustomCarrierName
-                                )
-                            )
-                        }
-                    ) {
-                        Text(text = stringResource(id = R.string.confirm))
-                    }
-                }
-            }
-        }
-        SwitchItem(
-            icon = ImageVector.vectorResource(id = R.drawable.mobile_screensaver),
-            title = stringResource(id = R.string.hideLockscreenStatusBar_title),
-            checked = uiState.statusBar.hideLockscreenStatusBar,
-            onCheckedChange = {
-                onEvent(SystemUIEvent.StatusBar.HideLockscreenStatusBar(it))
-            }
-        )
-
-        DividerText(R.string.qs)
-        SwitchItem(
-            icon = ImageVector.vectorResource(id = R.drawable.format_letter_spacing),
-            title = stringResource(id = R.string.setQsClockMonospaced_title),
-            checked = uiState.qs.setQsClockMonospaced,
-            onCheckedChange = {
-                onEvent(SystemUIEvent.QS.SetQsClockMonospaced(it))
-            }
-        )
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            SwitchItem(
-                icon = ImageVector.vectorResource(id = R.drawable.tile_medium),
-                title = stringResource(id = R.string.hideDeviceControlQsTile_title),
-                checked = uiState.qs.hideDeviceControlQsTile,
-                onCheckedChange = {
-                    onEvent(SystemUIEvent.QS.HideDeviceControlQsTile(it))
-                }
-            )
-            SwitchItem(
-                icon = ImageVector.vectorResource(id = R.drawable.tile_medium),
-                title = stringResource(id = R.string.hideSmartViewQsTile_title),
-                checked = uiState.qs.hideSmartViewQsTile,
-                onCheckedChange = {
-                    onEvent(SystemUIEvent.QS.HideSmartViewQsTile(it))
-                }
-            )
-            SwitchItem(
-                icon = ImageVector.vectorResource(id = R.drawable.five_g),
-                title = stringResource(id = R.string.turnOn5gQsTile_title),
-                summary = stringResource(id = R.string.turnOn5gQsTile_summary),
-                checked = uiState.qs.turnOn5gQsTile,
-                onCheckedChange = {
-                    onEvent(SystemUIEvent.QS.TurnOn5gQsTile(it))
-                }
-            )
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-            ListItem(
-                headlineContent = { Text(stringResource(id = R.string.turnOn5gQsTile_title)) },
-                leadingContent = {
-                    Icon(
-                        ImageVector.vectorResource(id = R.drawable.five_g),
-                        stringResource(id = R.string.turnOn5gQsTile_title)
-                    )
-                },
-                supportingContent = { Text(stringResource(id = R.string.root5gQsTile_summary)) }
-            )
-            if (ONE_UI_VERSION < 80500) {
-                SwitchItem(
-                    icon = ImageVector.vectorResource(id = R.drawable.tile_medium),
-                    title = stringResource(id = R.string.hideQsBarMediaPlayer_title),
-                    checked = uiState.qs.hideQsBarMediaPlayer,
-                    onCheckedChange = {
-                        onEvent(SystemUIEvent.QS.HideQsBarMediaPlayer(it))
-                    }
-                )
-            }
-            if (ONE_UI_VERSION < 80500) {
-                SwitchItem(
-                    icon = ImageVector.vectorResource(id = R.drawable.tile_medium),
-                    title = stringResource(id = R.string.hideQsBarNearbyDevicesAndDeviceControl_title),
-                    checked = uiState.qs.hideQsBarNearbyDevicesAndDeviceControl,
-                    onCheckedChange = {
-                        onEvent(SystemUIEvent.QS.HideQsBarNearbyDevicesAndDeviceControl(it))
-                    }
-                )
-            }
-            SwitchItem(
-                icon = ImageVector.vectorResource(id = R.drawable.tile_medium),
-                title = stringResource(id = R.string.hideQsBarSecurityFooter_title),
-                summary = stringResource(id = R.string.hideQsBarSecurityFooter_summary),
-                checked = uiState.qs.hideQsBarSecurityFooter,
-                onCheckedChange = {
-                    onEvent(SystemUIEvent.QS.HideQsBarSecurityFooter(it))
-                }
-            )
-            SwitchItem(
-                icon = ImageVector.vectorResource(id = R.drawable.tile_medium),
-                title = stringResource(id = R.string.hideQsBarDataUsage_title),
-                checked = uiState.qs.hideQsBarDataUsage,
-                onCheckedChange = {
-                    onEvent(SystemUIEvent.QS.HideQsBarDataUsage(it))
-                }
-            )
-            if (ONE_UI_VERSION < 80500) {
-                SwitchItem(
-                    icon = ImageVector.vectorResource(id = R.drawable.tile_medium),
-                    title = stringResource(id = R.string.hideQsBarSmartViewAndModes_title),
-                    checked = uiState.qs.hideQsBarSmartViewAndModes,
-                    onCheckedChange = {
-                        onEvent(SystemUIEvent.QS.HideQsBarSmartViewAndModes(it))
-                    }
-                )
-            }
-            if (ONE_UI_VERSION < 80500) {
-                SwitchItem(
-                    icon = ImageVector.vectorResource(id = R.drawable.expand),
-                    title = stringResource(id = R.string.alwaysExpandQsTileChunk_title),
-                    checked = uiState.qs.alwaysExpandQsTileChunk,
-                    onCheckedChange = {
-                        onEvent(SystemUIEvent.QS.AlwaysExpandQsTileChunk(it))
-                    }
-                )
-            }
-            if (ONE_UI_VERSION < 80500) {
-                SwitchItem(
-                    title = stringResource(id = R.string.alwaysShowTimeDateOnQs_title),
-                    icon = ImageVector.vectorResource(id = R.drawable.nest_clock_farsight_digital),
-                    checked = uiState.qs.alwaysShowTimeDateOnQs,
-                    onCheckedChange = {
-                        onEvent(SystemUIEvent.QS.AlwaysShowTimeDateOnQs(it))
-                    }
-                )
-            }
-            if (ONE_UI_VERSION < 80500) {
-                SwitchItem(
-                    icon = ImageVector.vectorResource(id = R.drawable.light_mode),
-                    title = stringResource(id = R.string.addBrightnessProgressToQsBar_title),
-                    checked = uiState.qs.addBrightnessProgressToQsBar,
-                    onCheckedChange = {
-                        onEvent(SystemUIEvent.QS.AddBrightnessProgressToQsBar(it))
-                    }
-                )
-            }
-            if (ONE_UI_VERSION < 80500) {
-                SwitchItem(
-                    icon = ImageVector.vectorResource(id = R.drawable.music_note),
-                    title = stringResource(id = R.string.addVolumeProgressToQsBar_title),
-                    checked = uiState.qs.addVolumeProgressToQsBar,
-                    onCheckedChange = {
-                        onEvent(SystemUIEvent.QS.AddVolumeProgressToQsBar(it))
-                    }
-                )
-            }
-            SwitchItem(
-                icon = ImageVector.vectorResource(id = R.drawable.today),
-                title = stringResource(id = R.string.showTraditionalChineseDateOnQS_title),
-                checked = uiState.qs.showTraditionalChineseDateOnQS,
-                onCheckedChange = {
-                    onEvent(SystemUIEvent.QS.ShowTraditionalChineseDateOnQS(it))
-                }
-            )
+    SettingsPane(modifier = modifier) {
+        SettingsGroup(R.string.group_status_bar_layout) {
             Column {
-                var textSize by remember { mutableFloatStateOf(uiState.qs.qsClockTextSize) }
+                var padding by remember {
+                    mutableFloatStateOf(uiState.statusBar.statusBarLeftPaddingDp)
+                }
                 var expanded by rememberSaveable { mutableStateOf(false) }
 
                 SwitchItem(
-                    title = stringResource(id = R.string.modifyQSClockTextSize_title),
+                    title = stringResource(id = R.string.statusBarLeftPaddingDp_title),
                     modifier = Modifier.animateContentSize(),
-                    summary = if (uiState.qs.modifyQSClockTextSize) {
-                        " %.1fsp".format(textSize)
+                    summary = if (uiState.statusBar.modifyStatusBarLeftPadding) {
+                        "%.1fdp".format(padding)
                     } else null,
-                    icon = ImageVector.vectorResource(id = R.drawable.format_size),
+                    icon = ImageVector.vectorResource(id = R.drawable.padding),
                     clickable = true,
                     onClick = { expanded = !expanded },
-                    checked = uiState.qs.modifyQSClockTextSize,
+                    checked = uiState.statusBar.modifyStatusBarLeftPadding,
                     onCheckedChange = {
-                        if (it && textSize == 32f) {
+                        if (it && padding == 0f) {
                             expanded = true
                         } else if (!it) {
                             expanded = false
                         }
-                        onEvent(SystemUIEvent.QS.ModifyQSClockTextSize(it))
+                        onEvent(SystemUIEvent.StatusBar.ModifyStatusBarLeftPadding(it))
                     }
                 )
-
-                AnimatedVisibility(expanded && uiState.qs.modifyQSClockTextSize) {
+                AnimatedVisibility(expanded && uiState.statusBar.modifyStatusBarLeftPadding) {
                     Slider(
-                        value = textSize,
-                        onValueChange = { textSize = it },
+                        value = padding,
+                        onValueChange = { padding = it },
                         modifier = Modifier.padding(horizontal = 16.dp),
-                        valueRange = 15f..70f,
+                        valueRange = 0f..100f,
                         onValueChangeFinished = {
-                            onEvent(SystemUIEvent.QS.QSClockTextSize(textSize))
+                            onEvent(SystemUIEvent.StatusBar.StatusBarLeftPaddingDp(padding))
                         }
                     )
                 }
             }
+            Column {
+                var padding by remember {
+                    mutableFloatStateOf(uiState.statusBar.statusBarRightPaddingDp)
+                }
+                var expanded by rememberSaveable { mutableStateOf(false) }
 
+                SwitchItem(
+                    title = stringResource(id = R.string.statusBarRightPaddingDp_title),
+                    modifier = Modifier.animateContentSize(),
+                    summary = if (uiState.statusBar.modifyStatusBarRightPadding) {
+                        "%.1fdp".format(padding)
+                    } else null,
+                    icon = ImageVector.vectorResource(id = R.drawable.padding),
+                    clickable = true,
+                    onClick = { expanded = !expanded },
+                    checked = uiState.statusBar.modifyStatusBarRightPadding,
+                    onCheckedChange = {
+                        if (it && padding == 0f) {
+                            expanded = true
+                        } else if (!it) {
+                            expanded = false
+                        }
+                        onEvent(SystemUIEvent.StatusBar.ModifyStatusBarRightPadding(it))
+                    }
+                )
+                AnimatedVisibility(expanded && uiState.statusBar.modifyStatusBarRightPadding) {
+                    Slider(
+                        value = padding,
+                        onValueChange = { padding = it },
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        valueRange = 0f..100f,
+                        onValueChangeFinished = {
+                            onEvent(SystemUIEvent.StatusBar.StatusBarRightPaddingDp(padding))
+                        }
+                    )
+                }
+            }
+        }
+        SettingsGroup(R.string.group_status_bar_battery) {
+            Column {
+                var widthScale by remember {
+                    mutableFloatStateOf(uiState.statusBar.batteryIconWidthScale)
+                }
+                var expanded by rememberSaveable { mutableStateOf(false) }
 
-            DividerText(R.string.aod)
+                SwitchItem(
+                    title = stringResource(id = R.string.setBatteryIconWidthScale_title),
+                    modifier = Modifier.animateContentSize(),
+                    summary = if (uiState.statusBar.setBatteryIconWidthScale) {
+                        "%.2f".format(widthScale)
+                    } else null,
+                    icon = ImageVector.vectorResource(id = R.drawable.battery),
+                    clickable = true,
+                    onClick = { expanded = !expanded },
+                    checked = uiState.statusBar.setBatteryIconWidthScale,
+                    onCheckedChange = {
+                        if (it && widthScale == 0f) {
+                            expanded = true
+                        } else if (!it) {
+                            expanded = false
+                        }
+                        onEvent(SystemUIEvent.StatusBar.SetBatteryIconWidthScale(it))
+                    }
+                )
+                AnimatedVisibility(expanded && uiState.statusBar.setBatteryIconWidthScale) {
+                    Slider(
+                        value = widthScale,
+                        onValueChange = { widthScale = it },
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        valueRange = 0.5f..2f,
+                        onValueChangeFinished = {
+                            onEvent(SystemUIEvent.StatusBar.BatteryIconWidthScale(widthScale))
+                        }
+                    )
+                }
+            }
+            Column {
+                var heightScale by remember {
+                    mutableFloatStateOf(uiState.statusBar.batteryIconHeightScale)
+                }
+                var expanded by rememberSaveable { mutableStateOf(false) }
+
+                SwitchItem(
+                    title = stringResource(id = R.string.setBatteryIconHeightScale_title),
+                    modifier = Modifier.animateContentSize(),
+                    summary = if (uiState.statusBar.setBatteryIconHeightScale) {
+                        "%.2f".format(heightScale)
+                    } else null,
+                    icon = ImageVector.vectorResource(id = R.drawable.battery),
+                    clickable = true,
+                    onClick = { expanded = !expanded },
+                    checked = uiState.statusBar.setBatteryIconHeightScale,
+                    onCheckedChange = {
+                        if (it && heightScale == 0f) {
+                            expanded = true
+                        } else if (!it) {
+                            expanded = false
+                        }
+                        onEvent(SystemUIEvent.StatusBar.SetBatteryIconHeightScale(it))
+                    }
+                )
+                AnimatedVisibility(expanded && uiState.statusBar.setBatteryIconHeightScale) {
+                    Slider(
+                        value = heightScale,
+                        onValueChange = { heightScale = it },
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        valueRange = 0.5f..2f,
+                        onValueChangeFinished = {
+                            onEvent(SystemUIEvent.StatusBar.BatteryIconHeightScale(heightScale))
+                        }
+                    )
+                }
+            }
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                SwitchItem(
+                    icon = ImageVector.vectorResource(id = R.drawable.battery),
+                    title = stringResource(id = R.string.hideBatteryPercentageSign_title),
+                    summary = stringResource(id = R.string.hideBatteryPercentageSign_summary),
+                    checked = uiState.statusBar.hideBatteryPercentageSign,
+                    onCheckedChange = {
+                        onEvent(SystemUIEvent.StatusBar.HideBatteryPercentageSign(it))
+                    }
+                )
+            }
             SwitchItem(
                 icon = ImageVector.vectorResource(id = R.drawable.battery),
-                title = stringResource(id = R.string.hideAODStatusBar_title),
-                checked = uiState.aod.hideAODStatusBar,
+                title = stringResource(id = R.string.hideBatteryIcon_title),
+                summary = stringResource(id = R.string.hideBatteryIcon_summary),
+                checked = uiState.statusBar.hideBatteryIcon,
                 onCheckedChange = {
-                    onEvent(SystemUIEvent.AOD.HideAODStatusBar(it))
+                    onEvent(SystemUIEvent.StatusBar.HideBatteryIcon(it))
+                }
+            )
+            Column {
+                var sizeDp by remember {
+                    mutableFloatStateOf(uiState.statusBar.circleBatteryIconSizeDp)
+                }
+                var horizontalPaddingDp by remember {
+                    mutableFloatStateOf(uiState.statusBar.circleBatteryIconHorizontalPaddingDp)
+                }
+                var verticalPaddingDp by remember {
+                    mutableFloatStateOf(uiState.statusBar.circleBatteryIconVerticalPaddingDp)
+                }
+
+                SwitchItem(
+                    icon = ImageVector.vectorResource(id = R.drawable.battery),
+                    title = stringResource(id = R.string.useCircleBatteryIcon_title),
+                    summary = stringResource(id = R.string.useCircleBatteryIcon_summary),
+                    checked = uiState.statusBar.useCircleBatteryIcon,
+                    onCheckedChange = {
+                        onEvent(SystemUIEvent.StatusBar.UseCircleBatteryIcon(it))
+                    }
+                )
+                AnimatedVisibility(uiState.statusBar.useCircleBatteryIcon) {
+                    Column {
+                        ListItem(
+                            headlineContent = {
+                                Text(text = stringResource(id = R.string.circleBatteryIconSizeDp_title))
+                            },
+                            supportingContent = { Text(text = "%.0fdp".format(sizeDp)) },
+                            leadingContent = {
+                                Icon(
+                                    ImageVector.vectorResource(id = R.drawable.battery),
+                                    contentDescription = null
+                                )
+                            }
+                        )
+                        Slider(
+                            value = sizeDp,
+                            onValueChange = { sizeDp = it },
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            valueRange = 8f..28f,
+                            onValueChangeFinished = {
+                                onEvent(SystemUIEvent.StatusBar.CircleBatteryIconSizeDp(sizeDp))
+                            }
+                        )
+                        ListItem(
+                            headlineContent = {
+                                Text(text = stringResource(id = R.string.circleBatteryIconHorizontalPaddingDp_title))
+                            },
+                            supportingContent = { Text(text = "%.0fdp".format(horizontalPaddingDp)) },
+                            leadingContent = {
+                                Icon(
+                                    ImageVector.vectorResource(id = R.drawable.battery),
+                                    contentDescription = null
+                                )
+                            }
+                        )
+                        Slider(
+                            value = horizontalPaddingDp,
+                            onValueChange = { horizontalPaddingDp = it },
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            valueRange = 0f..8f,
+                            onValueChangeFinished = {
+                                onEvent(
+                                    SystemUIEvent.StatusBar.CircleBatteryIconHorizontalPaddingDp(
+                                        horizontalPaddingDp
+                                    )
+                                )
+                            }
+                        )
+                        ListItem(
+                            headlineContent = {
+                                Text(text = stringResource(id = R.string.circleBatteryIconVerticalPaddingDp_title))
+                            },
+                            supportingContent = { Text(text = "%.0fdp".format(verticalPaddingDp)) },
+                            leadingContent = {
+                                Icon(
+                                    ImageVector.vectorResource(id = R.drawable.battery),
+                                    contentDescription = null
+                                )
+                            }
+                        )
+                        Slider(
+                            value = verticalPaddingDp,
+                            onValueChange = { verticalPaddingDp = it },
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            valueRange = 0f..8f,
+                            onValueChangeFinished = {
+                                onEvent(
+                                    SystemUIEvent.StatusBar.CircleBatteryIconVerticalPaddingDp(
+                                        verticalPaddingDp
+                                    )
+                                )
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
+            }
+            if (ONE_UI_VERSION >= 70000) {
+                SwitchItem(
+                    icon = ImageVector.vectorResource(id = R.drawable.battery),
+                    title = stringResource(id = R.string.addBatteryLevelText_title),
+                    summary = stringResource(id = R.string.addBatteryLevelText_summary),
+                    checked = uiState.statusBar.addBatteryLevelText,
+                    onCheckedChange = {
+                        onEvent(SystemUIEvent.StatusBar.AddBatteryLevelText(it))
+                    }
+                )
+                AnimatedVisibility(uiState.statusBar.addBatteryLevelText) {
+                    Column {
+                        var percentSignScale by remember {
+                            mutableFloatStateOf(uiState.statusBar.batteryLevelTextPercentSignScale)
+                        }
+
+                        SwitchItem(
+                            icon = ImageVector.vectorResource(id = R.drawable.battery),
+                            title = stringResource(id = R.string.hideBatteryLevelTextPercentageSign_title),
+                            checked = uiState.statusBar.hideBatteryLevelTextPercentageSign,
+                            onCheckedChange = {
+                                onEvent(SystemUIEvent.StatusBar.HideBatteryLevelTextPercentageSign(it))
+                            }
+                        )
+                        // 「%」だけを小さくする、旧Jailbreak Tweak風の表示にできる
+                        AnimatedVisibility(!uiState.statusBar.hideBatteryLevelTextPercentageSign) {
+                            Column {
+                                ListItem(
+                                    headlineContent = {
+                                        Text(
+                                            text = stringResource(
+                                                id = R.string.batteryLevelTextPercentSignScale_title
+                                            )
+                                        )
+                                    },
+                                    supportingContent = {
+                                        Text(text = "%.2fx".format(percentSignScale))
+                                    },
+                                    leadingContent = {
+                                        Icon(
+                                            ImageVector.vectorResource(id = R.drawable.format_size),
+                                            contentDescription = null
+                                        )
+                                    }
+                                )
+                                Slider(
+                                    value = percentSignScale,
+                                    onValueChange = { percentSignScale = it },
+                                    modifier = Modifier.padding(horizontal = 16.dp),
+                                    valueRange = 0.3f..1.5f,
+                                    onValueChangeFinished = {
+                                        onEvent(
+                                            SystemUIEvent.StatusBar.BatteryLevelTextPercentSignScale(
+                                                percentSignScale
+                                            )
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                        SwitchItem(
+                            icon = ImageVector.vectorResource(id = R.drawable.battery),
+                            title = stringResource(id = R.string.hideBatteryLevelTextChargingIcon_title),
+                            summary = stringResource(id = R.string.hideBatteryLevelTextChargingIcon_summary),
+                            checked = uiState.statusBar.hideBatteryLevelTextChargingIcon,
+                            onCheckedChange = {
+                                onEvent(SystemUIEvent.StatusBar.HideBatteryLevelTextChargingIcon(it))
+                            }
+                        )
+                    }
+                }
+            }
+        }
+        SettingsGroup(R.string.group_status_bar_network) {
+            SwitchItem(
+                icon = ImageVector.vectorResource(id = R.drawable.net_speed),
+                title = stringResource(id = R.string.supportRealTimeNetworkSpeed_title),
+                summary = stringResource(id = R.string.supportRealTimeNetworkSpeed_summary),
+                checked = uiState.statusBar.supportRealTimeNetworkSpeed,
+                onCheckedChange = {
+                    onEvent(SystemUIEvent.StatusBar.SupportRealTimeNetworkSpeed(it))
                 }
             )
             SwitchItem(
-                icon = ImageVector.vectorResource(id = R.drawable.today),
-                title = stringResource(id = R.string.aodLockSupportLunar_title),
-                checked = uiState.aod.aodLockSupportLunar,
+                icon = ImageVector.vectorResource(id = R.drawable.net_speed),
+                title = stringResource(id = R.string.showSeparateUpDownNetworkSpeeds_title),
+                summary = stringResource(id = R.string.showSeparateUpDownNetworkSpeeds_summary),
+                checked = uiState.statusBar.showSeparateUpDownNetworkSpeeds,
                 onCheckedChange = {
-                    onEvent(SystemUIEvent.AOD.AODLockSupportLunar(it))
+                    onEvent(SystemUIEvent.StatusBar.ShowSeparateUpDownNetworkSpeeds(it))
                 }
             )
         }
+        SettingsGroup(R.string.group_status_bar_clock) {
+            Column {
+                var expanded by rememberSaveable { mutableStateOf(false) }
 
-        DividerText(R.string.other)
-        Column {
-            var expanded by rememberSaveable { mutableStateOf(false) }
+                SwitchItem(
+                    title = stringResource(id = R.string.setStatusBarClockFormat_title),
+                    modifier = Modifier.animateContentSize(),
+                    summary = if (uiState.statusBar.setStatusBarClockFormat) {
+                        uiState.statusBar.statusBarClockFormat
+                    } else null,
+                    icon = ImageVector.vectorResource(id = R.drawable.nest_clock_farsight_digital),
+                    clickable = true,
+                    onClick = { expanded = !expanded },
+                    checked = uiState.statusBar.setStatusBarClockFormat,
+                    onCheckedChange = {
+                        if (it && uiState.statusBar.statusBarClockFormat == "HH:mm") {
+                            expanded = true
+                        } else if (!it) {
+                            expanded = false
+                        }
+                        onEvent(SystemUIEvent.StatusBar.SetStatusBarClockFormat(it))
+                    }
+                )
+
+                AnimatedVisibility(expanded && uiState.statusBar.setStatusBarClockFormat) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    ) {
+                        var tempDataTimeFormat by remember {
+                            mutableStateOf(uiState.statusBar.statusBarClockFormat)
+                        }
+                        var label by remember { mutableStateOf("") }
+                        OutlinedTextField(
+                            value = tempDataTimeFormat,
+                            onValueChange = { tempDataTimeFormat = it },
+                            modifier = Modifier.weight(1f),
+                            label = { Text(text = label) }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                var right = true
+                                label = try {
+                                    DateTimeFormatter
+                                        .ofPattern(tempDataTimeFormat)
+                                        .format(LocalDateTime.now())
+                                } catch (_: Throwable) {
+                                    right = false
+                                    "error"
+                                }
+                                if (right) {
+                                    onEvent(
+                                        SystemUIEvent.StatusBar.StatusBarClockFormat(
+                                            tempDataTimeFormat
+                                        )
+                                    )
+                                }
+                            }
+                        ) {
+                            Text(text = stringResource(id = R.string.confirm))
+                        }
+                    }
+                }
+            }
+            Column {
+                var expanded by rememberSaveable { mutableStateOf(false) }
+                var dateTextScale by remember {
+                    mutableFloatStateOf(uiState.statusBar.statusBarClockDateTextScale)
+                }
+                var dateOffsetDp by remember {
+                    mutableFloatStateOf(uiState.statusBar.statusBarClockDateOffsetDp)
+                }
+                val dateLocale = rememberDateLocale(uiState.statusBar.statusBarClockDateLocale)
+
+                SwitchItem(
+                    title = stringResource(id = R.string.appendStatusBarClockDate_title),
+                    modifier = Modifier.animateContentSize(),
+                    summary = if (uiState.statusBar.appendStatusBarClockDate) {
+                        val preview = clockPreview(
+                            timeFormat = uiState.statusBar.statusBarClockFormat,
+                            dateFormat = uiState.statusBar.statusBarClockDateFormat,
+                            separator = uiState.statusBar.statusBarClockDateSeparator,
+                            dateBeforeTime = uiState.statusBar.statusBarClockDateBeforeTime,
+                            locale = dateLocale,
+                        )
+                        // preview はユーザー入力由来なので、書式指定文字列としては使わない
+                        preview + "   " + "%.2fx".format(dateTextScale)
+                    } else {
+                        stringResource(id = R.string.appendStatusBarClockDate_summary)
+                    },
+                    icon = ImageVector.vectorResource(id = R.drawable.today),
+                    clickable = true,
+                    onClick = { expanded = !expanded },
+                    checked = uiState.statusBar.appendStatusBarClockDate,
+                    onCheckedChange = {
+                        expanded = it
+                        onEvent(SystemUIEvent.StatusBar.AppendStatusBarClockDate(it))
+                    }
+                )
+
+                AnimatedVisibility(expanded && uiState.statusBar.appendStatusBarClockDate) {
+                    Column {
+                        // 日期格式。E=木, EEEE=木曜日, M/d(E)=8/14(木) など
+                        ConfirmableTextField(
+                            initialValue = uiState.statusBar.statusBarClockDateFormat,
+                            label = stringResource(id = R.string.statusBarClockDateFormat_label),
+                            preview = { input ->
+                                runCatching {
+                                    DateTimeFormatter
+                                        .ofPattern(input, dateLocale)
+                                        .format(LocalDateTime.now())
+                                }.getOrNull()
+                            },
+                            onConfirm = {
+                                onEvent(SystemUIEvent.StatusBar.StatusBarClockDateFormat(it))
+                            }
+                        )
+                        // 時刻と日付の区切り文字。半角スペースや " · " など
+                        ConfirmableTextField(
+                            initialValue = uiState.statusBar.statusBarClockDateSeparator,
+                            label = stringResource(id = R.string.statusBarClockDateSeparator_label),
+                            preview = { "[$it]" },
+                            onConfirm = {
+                                onEvent(SystemUIEvent.StatusBar.StatusBarClockDateSeparator(it))
+                            }
+                        )
+                        // 日付の言語。空欄ならシステム言語に追従
+                        ConfirmableTextField(
+                            initialValue = uiState.statusBar.statusBarClockDateLocale,
+                            label = stringResource(id = R.string.statusBarClockDateLocale_label),
+                            preview = { input ->
+                                val locale = parseLocaleTag(input) ?: Locale.getDefault()
+                                runCatching {
+                                    DateTimeFormatter
+                                        .ofPattern(
+                                            uiState.statusBar.statusBarClockDateFormat,
+                                            locale
+                                        )
+                                        .format(LocalDateTime.now())
+                                }.getOrNull()
+                            },
+                            onConfirm = {
+                                onEvent(SystemUIEvent.StatusBar.StatusBarClockDateLocale(it))
+                            }
+                        )
+                        SwitchItem(
+                            title = stringResource(id = R.string.statusBarClockDateBeforeTime_title),
+                            summary = stringResource(id = R.string.statusBarClockDateBeforeTime_summary),
+                            icon = ImageVector.vectorResource(id = R.drawable.tab_move),
+                            checked = uiState.statusBar.statusBarClockDateBeforeTime,
+                            onCheckedChange = {
+                                onEvent(SystemUIEvent.StatusBar.StatusBarClockDateBeforeTime(it))
+                            }
+                        )
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    text = stringResource(
+                                        id = R.string.statusBarClockDateTextScale_title
+                                    )
+                                )
+                            },
+                            supportingContent = { Text(text = "%.2fx".format(dateTextScale)) },
+                            leadingContent = {
+                                Icon(
+                                    ImageVector.vectorResource(id = R.drawable.format_size),
+                                    contentDescription = null
+                                )
+                            }
+                        )
+                        Slider(
+                            value = dateTextScale,
+                            onValueChange = { dateTextScale = it },
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            valueRange = 0.3f..1.5f,
+                            onValueChangeFinished = {
+                                onEvent(
+                                    SystemUIEvent.StatusBar.StatusBarClockDateTextScale(dateTextScale)
+                                )
+                            }
+                        )
+                        // 日付は時刻と基線を共有するため、小さい文字だと下寄りに見える。その微調整
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    text = stringResource(
+                                        id = R.string.statusBarClockDateOffsetDp_title
+                                    )
+                                )
+                            },
+                            supportingContent = { Text(text = "%.1fdp".format(dateOffsetDp)) },
+                            leadingContent = {
+                                Icon(
+                                    ImageVector.vectorResource(id = R.drawable.today),
+                                    contentDescription = null
+                                )
+                            }
+                        )
+                        Slider(
+                            value = dateOffsetDp,
+                            onValueChange = { dateOffsetDp = it },
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            valueRange = -4f..4f,
+                            onValueChangeFinished = {
+                                onEvent(
+                                    SystemUIEvent.StatusBar.StatusBarClockDateOffsetDp(dateOffsetDp)
+                                )
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
+            }
             SwitchItem(
-                icon = ImageVector.vectorResource(id = R.drawable.power_settings_new),
-                title = stringResource(id = R.string.customPowerMenu_title),
-                clickable = true,
-                onClick = { expanded = !expanded },
-                checked = uiState.other.customPowerMenu,
+                title = stringResource(id = R.string.updateStatusBarClockEverySecond_title),
+                summary = stringResource(id = R.string.updateStatusBarClockEverySecond_summary),
+                icon = ImageVector.vectorResource(id = R.drawable.nest_clock_farsight_digital),
+                checked = uiState.statusBar.updateStatusBarClockEverySecond,
                 onCheckedChange = {
-                    expanded = it
-                    onEvent(SystemUIEvent.Other.CustomPowerMenu(it))
+                    onEvent(SystemUIEvent.StatusBar.UpdateStatusBarClockEverySecond(it))
                 }
             )
-            AnimatedVisibility(expanded && uiState.other.customPowerMenu) {
-                PowerMenuActionEditor(
-                    actions = uiState.other.powerMenuActions,
-                    onActionsChange = {
-                        onEvent(SystemUIEvent.Other.PowerMenuActions(it))
+        }
+        SettingsGroup(R.string.group_status_bar_icons) {
+            SwitchItem(
+                icon = ImageVector.vectorResource(id = R.drawable.folder_managed),
+                title = stringResource(id = R.string.hideSecureFolderStatusBarIcon_title),
+                checked = uiState.statusBar.hideSecureFolderStatusBarIcon,
+                onCheckedChange = {
+                    onEvent(SystemUIEvent.StatusBar.HideSecureFolderStatusBarIcon(it))
+                }
+            )
+            SwitchItem(
+                icon = ImageVector.vectorResource(id = R.drawable.bluetooth),
+                title = stringResource(id = R.string.restoreBluetoothStatusBarIcon_title),
+                checked = uiState.statusBar.restoreBluetoothStatusBarIcon,
+                onCheckedChange = {
+                    onEvent(SystemUIEvent.StatusBar.RestoreBluetoothStatusBarIcon(it))
+                }
+            )
+            SwitchItem(
+                icon = ImageVector.vectorResource(id = R.drawable.sim_card),
+                title = stringResource(id = R.string.physicalEsimAdapterWorkaround_title),
+                summary = stringResource(id = R.string.physicalEsimAdapterWorkaround_summary),
+                checked = uiState.statusBar.physicalEsimAdapterWorkaround,
+                onCheckedChange = {
+                    onEvent(SystemUIEvent.StatusBar.PhysicalEsimAdapterWorkaround(it))
+                }
+            )
+            AnimatedVisibility(uiState.statusBar.physicalEsimAdapterWorkaround) {
+                SelectItem(
+                    icon = ImageVector.vectorResource(id = R.drawable.sim_card),
+                    title = stringResource(id = R.string.physicalEsimAdapterSimSlot_title),
+                    entries = listOf(
+                        stringResource(id = R.string.sim_slot_1),
+                        stringResource(id = R.string.sim_slot_2),
+                        stringResource(id = R.string.sim_slot_both)
+                    ),
+                    selectedIndex = uiState.statusBar.physicalEsimAdapterSimSlot.coerceIn(
+                        0,
+                        ESIM_ADAPTER_SIM_BOTH
+                    ),
+                    onSelectedIndexChange = {
+                        onEvent(SystemUIEvent.StatusBar.PhysicalEsimAdapterSimSlot(it))
+                    }
+                )
+            }
+            SwitchItem(
+                icon = ImageVector.vectorResource(id = R.drawable.mobile_screensaver),
+                title = stringResource(id = R.string.doubleTapStatusBarToSleep_title),
+                checked = uiState.statusBar.doubleTapStatusBarToSleep,
+                onCheckedChange = {
+                    onEvent(SystemUIEvent.StatusBar.DoubleTapStatusBarToSleep(it))
+                }
+            )
+            Column {
+                var max by remember {
+                    mutableIntStateOf(uiState.statusBar.statusBarMaxNotificationIcons)
+                }
+                var expanded by rememberSaveable { mutableStateOf(false) }
+
+                SwitchItem(
+                    title = stringResource(id = R.string.setStatusBarMaxNotificationIcons_title),
+                    modifier = Modifier.animateContentSize(),
+                    summary = if (uiState.statusBar.modifyStatusBarMaxNotificationIcons) " $max" else null,
+                    icon = ImageVector.vectorResource(id = R.drawable.notifications),
+                    clickable = true,
+                    onClick = { expanded = !expanded },
+                    checked = uiState.statusBar.modifyStatusBarMaxNotificationIcons,
+                    onCheckedChange = {
+                        if (it && max == 4) {
+                            expanded = true
+                        } else if (!it) {
+                            expanded = false
+                        }
+                        onEvent(SystemUIEvent.StatusBar.ModifyStatusBarMaxNotificationIcons(it))
+                    }
+                )
+                AnimatedVisibility(expanded && uiState.statusBar.modifyStatusBarMaxNotificationIcons) {
+                    Slider(
+                        value = max.toFloat(),
+                        onValueChange = { max = it.roundToInt() },
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        valueRange = 4f..20f,
+                        steps = 15,
+                        onValueChangeFinished = {
+                            onEvent(SystemUIEvent.StatusBar.StatusBarMaxNotificationIcons(max))
+                        }
+                    )
+                }
+            }
+            Column {
+                var expanded by rememberSaveable { mutableStateOf(false) }
+
+                SwitchItem(
+                    title = stringResource(id = R.string.setCustomCarrierName_title),
+                    modifier = Modifier.animateContentSize(),
+                    summary = if (uiState.statusBar.setCustomCarrierName) {
+                        uiState.statusBar.customCarrierName
+                    } else null,
+                    icon = ImageVector.vectorResource(id = R.drawable.sim_card),
+                    clickable = true,
+                    onClick = { expanded = !expanded },
+                    checked = uiState.statusBar.setCustomCarrierName,
+                    onCheckedChange = {
+                        if (it && uiState.statusBar.customCarrierName.isEmpty()) {
+                            expanded = true
+                        } else if (!it) {
+                            expanded = false
+                        }
+                        onEvent(SystemUIEvent.StatusBar.SetCustomCarrierName(it))
+                    }
+                )
+
+                AnimatedVisibility(expanded && uiState.statusBar.setCustomCarrierName) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    ) {
+                        var tempCustomCarrierName by remember {
+                            mutableStateOf(uiState.statusBar.customCarrierName)
+                        }
+
+                        OutlinedTextField(
+                            value = tempCustomCarrierName,
+                            onValueChange = { tempCustomCarrierName = it },
+                            modifier = Modifier.weight(1f),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                onEvent(
+                                    SystemUIEvent.StatusBar.CustomCarrierName(
+                                        tempCustomCarrierName
+                                    )
+                                )
+                            }
+                        ) {
+                            Text(text = stringResource(id = R.string.confirm))
+                        }
+                    }
+                }
+            }
+            SwitchItem(
+                icon = ImageVector.vectorResource(id = R.drawable.mobile_screensaver),
+                title = stringResource(id = R.string.hideLockscreenStatusBar_title),
+                checked = uiState.statusBar.hideLockscreenStatusBar,
+                onCheckedChange = {
+                    onEvent(SystemUIEvent.StatusBar.HideLockscreenStatusBar(it))
+                }
+            )
+        }
+        SettingsGroup(R.string.qs) {
+            SwitchItem(
+                icon = ImageVector.vectorResource(id = R.drawable.format_letter_spacing),
+                title = stringResource(id = R.string.setQsClockMonospaced_title),
+                checked = uiState.qs.setQsClockMonospaced,
+                onCheckedChange = {
+                    onEvent(SystemUIEvent.QS.SetQsClockMonospaced(it))
+                }
+            )
+            if (Build.VERSION.SDK_INT == Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                SwitchItem(
+                    icon = ImageVector.vectorResource(id = R.drawable.tile_medium),
+                    title = stringResource(id = R.string.hideDeviceControlQsTile_title),
+                    checked = uiState.qs.hideDeviceControlQsTile,
+                    onCheckedChange = {
+                        onEvent(SystemUIEvent.QS.HideDeviceControlQsTile(it))
+                    }
+                )
+                SwitchItem(
+                    icon = ImageVector.vectorResource(id = R.drawable.tile_medium),
+                    title = stringResource(id = R.string.hideSmartViewQsTile_title),
+                    checked = uiState.qs.hideSmartViewQsTile,
+                    onCheckedChange = {
+                        onEvent(SystemUIEvent.QS.HideSmartViewQsTile(it))
+                    }
+                )
+                SwitchItem(
+                    icon = ImageVector.vectorResource(id = R.drawable.five_g),
+                    title = stringResource(id = R.string.turnOn5gQsTile_title),
+                    summary = stringResource(id = R.string.turnOn5gQsTile_summary),
+                    checked = uiState.qs.turnOn5gQsTile,
+                    onCheckedChange = {
+                        onEvent(SystemUIEvent.QS.TurnOn5gQsTile(it))
+                    }
+                )
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                ListItem(
+                    headlineContent = { Text(stringResource(id = R.string.turnOn5gQsTile_title)) },
+                    leadingContent = {
+                        Icon(
+                            ImageVector.vectorResource(id = R.drawable.five_g),
+                            stringResource(id = R.string.turnOn5gQsTile_title)
+                        )
+                    },
+                    supportingContent = { Text(stringResource(id = R.string.root5gQsTile_summary)) }
+                )
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            SettingsGroup(R.string.group_qs_hide) {
+                if (ONE_UI_VERSION < 80500) {
+                    SwitchItem(
+                        icon = ImageVector.vectorResource(id = R.drawable.tile_medium),
+                        title = stringResource(id = R.string.hideQsBarMediaPlayer_title),
+                        checked = uiState.qs.hideQsBarMediaPlayer,
+                        onCheckedChange = {
+                            onEvent(SystemUIEvent.QS.HideQsBarMediaPlayer(it))
+                        }
+                    )
+                }
+                if (ONE_UI_VERSION < 80500) {
+                    SwitchItem(
+                        icon = ImageVector.vectorResource(id = R.drawable.tile_medium),
+                        title = stringResource(id = R.string.hideQsBarNearbyDevicesAndDeviceControl_title),
+                        checked = uiState.qs.hideQsBarNearbyDevicesAndDeviceControl,
+                        onCheckedChange = {
+                            onEvent(SystemUIEvent.QS.HideQsBarNearbyDevicesAndDeviceControl(it))
+                        }
+                    )
+                }
+                SwitchItem(
+                    icon = ImageVector.vectorResource(id = R.drawable.tile_medium),
+                    title = stringResource(id = R.string.hideQsBarSecurityFooter_title),
+                    summary = stringResource(id = R.string.hideQsBarSecurityFooter_summary),
+                    checked = uiState.qs.hideQsBarSecurityFooter,
+                    onCheckedChange = {
+                        onEvent(SystemUIEvent.QS.HideQsBarSecurityFooter(it))
+                    }
+                )
+                SwitchItem(
+                    icon = ImageVector.vectorResource(id = R.drawable.tile_medium),
+                    title = stringResource(id = R.string.hideQsBarDataUsage_title),
+                    checked = uiState.qs.hideQsBarDataUsage,
+                    onCheckedChange = {
+                        onEvent(SystemUIEvent.QS.HideQsBarDataUsage(it))
+                    }
+                )
+                if (ONE_UI_VERSION < 80500) {
+                    SwitchItem(
+                        icon = ImageVector.vectorResource(id = R.drawable.tile_medium),
+                        title = stringResource(id = R.string.hideQsBarSmartViewAndModes_title),
+                        checked = uiState.qs.hideQsBarSmartViewAndModes,
+                        onCheckedChange = {
+                            onEvent(SystemUIEvent.QS.HideQsBarSmartViewAndModes(it))
+                        }
+                    )
+                }
+            }
+            SettingsGroup(R.string.group_qs_panel) {
+                if (ONE_UI_VERSION < 80500) {
+                    SwitchItem(
+                        icon = ImageVector.vectorResource(id = R.drawable.expand),
+                        title = stringResource(id = R.string.alwaysExpandQsTileChunk_title),
+                        checked = uiState.qs.alwaysExpandQsTileChunk,
+                        onCheckedChange = {
+                            onEvent(SystemUIEvent.QS.AlwaysExpandQsTileChunk(it))
+                        }
+                    )
+                }
+                if (ONE_UI_VERSION < 80500) {
+                    SwitchItem(
+                        title = stringResource(id = R.string.alwaysShowTimeDateOnQs_title),
+                        icon = ImageVector.vectorResource(id = R.drawable.nest_clock_farsight_digital),
+                        checked = uiState.qs.alwaysShowTimeDateOnQs,
+                        onCheckedChange = {
+                            onEvent(SystemUIEvent.QS.AlwaysShowTimeDateOnQs(it))
+                        }
+                    )
+                }
+                if (ONE_UI_VERSION < 80500) {
+                    SwitchItem(
+                        icon = ImageVector.vectorResource(id = R.drawable.light_mode),
+                        title = stringResource(id = R.string.addBrightnessProgressToQsBar_title),
+                        checked = uiState.qs.addBrightnessProgressToQsBar,
+                        onCheckedChange = {
+                            onEvent(SystemUIEvent.QS.AddBrightnessProgressToQsBar(it))
+                        }
+                    )
+                }
+                if (ONE_UI_VERSION < 80500) {
+                    SwitchItem(
+                        icon = ImageVector.vectorResource(id = R.drawable.music_note),
+                        title = stringResource(id = R.string.addVolumeProgressToQsBar_title),
+                        checked = uiState.qs.addVolumeProgressToQsBar,
+                        onCheckedChange = {
+                            onEvent(SystemUIEvent.QS.AddVolumeProgressToQsBar(it))
+                        }
+                    )
+                }
+                SwitchItem(
+                    icon = ImageVector.vectorResource(id = R.drawable.today),
+                    title = stringResource(id = R.string.showTraditionalChineseDateOnQS_title),
+                    checked = uiState.qs.showTraditionalChineseDateOnQS,
+                    onCheckedChange = {
+                        onEvent(SystemUIEvent.QS.ShowTraditionalChineseDateOnQS(it))
+                    }
+                )
+                Column {
+                    var textSize by remember { mutableFloatStateOf(uiState.qs.qsClockTextSize) }
+                    var expanded by rememberSaveable { mutableStateOf(false) }
+
+                    SwitchItem(
+                        title = stringResource(id = R.string.modifyQSClockTextSize_title),
+                        modifier = Modifier.animateContentSize(),
+                        summary = if (uiState.qs.modifyQSClockTextSize) {
+                            " %.1fsp".format(textSize)
+                        } else null,
+                        icon = ImageVector.vectorResource(id = R.drawable.format_size),
+                        clickable = true,
+                        onClick = { expanded = !expanded },
+                        checked = uiState.qs.modifyQSClockTextSize,
+                        onCheckedChange = {
+                            if (it && textSize == 32f) {
+                                expanded = true
+                            } else if (!it) {
+                                expanded = false
+                            }
+                            onEvent(SystemUIEvent.QS.ModifyQSClockTextSize(it))
+                        }
+                    )
+
+                    AnimatedVisibility(expanded && uiState.qs.modifyQSClockTextSize) {
+                        Slider(
+                            value = textSize,
+                            onValueChange = { textSize = it },
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            valueRange = 15f..70f,
+                            onValueChangeFinished = {
+                                onEvent(SystemUIEvent.QS.QSClockTextSize(textSize))
+                            }
+                        )
+                    }
+                }
+            }
+            SettingsGroup(R.string.aod) {
+                SwitchItem(
+                    icon = ImageVector.vectorResource(id = R.drawable.battery),
+                    title = stringResource(id = R.string.hideAODStatusBar_title),
+                    checked = uiState.aod.hideAODStatusBar,
+                    onCheckedChange = {
+                        onEvent(SystemUIEvent.AOD.HideAODStatusBar(it))
+                    }
+                )
+                SwitchItem(
+                    icon = ImageVector.vectorResource(id = R.drawable.today),
+                    title = stringResource(id = R.string.aodLockSupportLunar_title),
+                    checked = uiState.aod.aodLockSupportLunar,
+                    onCheckedChange = {
+                        onEvent(SystemUIEvent.AOD.AODLockSupportLunar(it))
                     }
                 )
             }
         }
-        SwitchItem(
-            icon = ImageVector.vectorResource(id = R.drawable.screenshot),
-            title = stringResource(id = R.string.disableScreenshotCaptureSound_title),
-            checked = uiState.other.disableScreenshotCaptureSound,
-            onCheckedChange = {
-                onEvent(SystemUIEvent.Other.DisableScreenshotCaptureSound(it))
-            }
-        )
-        Column {
-            var expanded by rememberSaveable { mutableStateOf(false) }
-            SwitchItem(
-                icon = ImageVector.vectorResource(id = R.drawable.music_note),
-                title = stringResource(id = R.string.hideOngoingActivityMedia_title),
-                summary = if (uiState.other.hideOngoingActivityMedia && uiState.other.hideOngoingActivityMediaPackages.isNotEmpty()) {
-                    uiState.other.hideOngoingActivityMediaPackages
-                } else {
-                    stringResource(id = R.string.hideOngoingActivityMedia_summary)
-                },
-                clickable = true,
-                onClick = { expanded = !expanded },
-                checked = uiState.other.hideOngoingActivityMedia,
-                onCheckedChange = {
-                    if (it && uiState.other.hideOngoingActivityMediaPackages.isEmpty()) {
-                        expanded = true
-                    } else if (!it) {
-                        expanded = false
+        SettingsGroup(R.string.group_power_menu) {
+            Column {
+                var expanded by rememberSaveable { mutableStateOf(false) }
+                SwitchItem(
+                    icon = ImageVector.vectorResource(id = R.drawable.power_settings_new),
+                    title = stringResource(id = R.string.customPowerMenu_title),
+                    clickable = true,
+                    onClick = { expanded = !expanded },
+                    checked = uiState.other.customPowerMenu,
+                    onCheckedChange = {
+                        expanded = it
+                        onEvent(SystemUIEvent.Other.CustomPowerMenu(it))
                     }
-                    onEvent(SystemUIEvent.Other.HideOngoingActivityMedia(it))
-                }
-            )
-            AnimatedVisibility(expanded && uiState.other.hideOngoingActivityMedia) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                ) {
-                    var tempPackages by remember {
-                        mutableStateOf(uiState.other.hideOngoingActivityMediaPackages)
-                    }
-                    OutlinedTextField(
-                        value = tempPackages,
-                        onValueChange = { tempPackages = it },
-                        modifier = Modifier.weight(1f),
-                        label = { Text(text = stringResource(id = R.string.hideOngoingActivityMedia_packages_hint)) },
-                        singleLine = true,
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            onEvent(SystemUIEvent.Other.HideOngoingActivityMediaPackages(tempPackages))
+                )
+                AnimatedVisibility(expanded && uiState.other.customPowerMenu) {
+                    PowerMenuActionEditor(
+                        actions = uiState.other.powerMenuActions,
+                        onActionsChange = {
+                            onEvent(SystemUIEvent.Other.PowerMenuActions(it))
                         }
-                    ) {
-                        Text(text = stringResource(id = R.string.confirm))
-                    }
+                    )
                 }
             }
         }
-        SwitchItem(
-            icon = ImageVector.vectorResource(id = R.drawable.notifications),
-            title = stringResource(id = R.string.disableNotificationGrouping_title),
-            summary = stringResource(id = R.string.disableNotificationGrouping_summary),
-            checked = uiState.other.disableNotificationGrouping,
-            onCheckedChange = {
-                onEvent(SystemUIEvent.Other.DisableNotificationGrouping(it))
+        SettingsGroup(R.string.group_notifications_sound) {
+            SwitchItem(
+                icon = ImageVector.vectorResource(id = R.drawable.screenshot),
+                title = stringResource(id = R.string.disableScreenshotCaptureSound_title),
+                checked = uiState.other.disableScreenshotCaptureSound,
+                onCheckedChange = {
+                    onEvent(SystemUIEvent.Other.DisableScreenshotCaptureSound(it))
+                }
+            )
+            Column {
+                var expanded by rememberSaveable { mutableStateOf(false) }
+                SwitchItem(
+                    icon = ImageVector.vectorResource(id = R.drawable.music_note),
+                    title = stringResource(id = R.string.hideOngoingActivityMedia_title),
+                    summary = if (uiState.other.hideOngoingActivityMedia && uiState.other.hideOngoingActivityMediaPackages.isNotEmpty()) {
+                        uiState.other.hideOngoingActivityMediaPackages
+                    } else {
+                        stringResource(id = R.string.hideOngoingActivityMedia_summary)
+                    },
+                    clickable = true,
+                    onClick = { expanded = !expanded },
+                    checked = uiState.other.hideOngoingActivityMedia,
+                    onCheckedChange = {
+                        if (it && uiState.other.hideOngoingActivityMediaPackages.isEmpty()) {
+                            expanded = true
+                        } else if (!it) {
+                            expanded = false
+                        }
+                        onEvent(SystemUIEvent.Other.HideOngoingActivityMedia(it))
+                    }
+                )
+                AnimatedVisibility(expanded && uiState.other.hideOngoingActivityMedia) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    ) {
+                        var tempPackages by remember {
+                            mutableStateOf(uiState.other.hideOngoingActivityMediaPackages)
+                        }
+                        OutlinedTextField(
+                            value = tempPackages,
+                            onValueChange = { tempPackages = it },
+                            modifier = Modifier.weight(1f),
+                            label = { Text(text = stringResource(id = R.string.hideOngoingActivityMedia_packages_hint)) },
+                            singleLine = true,
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                onEvent(SystemUIEvent.Other.HideOngoingActivityMediaPackages(tempPackages))
+                            }
+                        ) {
+                            Text(text = stringResource(id = R.string.confirm))
+                        }
+                    }
+                }
             }
-        )
-        SwitchItem(
-            icon = ImageVector.vectorResource(id = R.drawable.notifications),
-            title = stringResource(id = R.string.autoExpandNotifications_title),
-            checked = uiState.other.autoExpandNotifications,
-            onCheckedChange = {
-                onEvent(SystemUIEvent.Other.AutoExpandNotifications(it))
-            }
-        )
+            SwitchItem(
+                icon = ImageVector.vectorResource(id = R.drawable.notifications),
+                title = stringResource(id = R.string.disableNotificationGrouping_title),
+                summary = stringResource(id = R.string.disableNotificationGrouping_summary),
+                checked = uiState.other.disableNotificationGrouping,
+                onCheckedChange = {
+                    onEvent(SystemUIEvent.Other.DisableNotificationGrouping(it))
+                }
+            )
+            SwitchItem(
+                icon = ImageVector.vectorResource(id = R.drawable.notifications),
+                title = stringResource(id = R.string.autoExpandNotifications_title),
+                checked = uiState.other.autoExpandNotifications,
+                onCheckedChange = {
+                    onEvent(SystemUIEvent.Other.AutoExpandNotifications(it))
+                }
+            )
+        }
     }
 }
 
+/**
+ * 入力欄と「確定」ボタンの組。
+ *
+ * [preview] が null 以外を返した場合のみ [onConfirm] を呼び、
+ * 返ってきた文字列をラベルに表示して結果をその場で確認できるようにする。
+ * null（＝不正な入力）の場合はラベルに error と表示し、設定は保存しない。
+ */
 @Composable
-private fun DividerText(@StringRes id: Int) = Text(
-    text = stringResource(id),
-    modifier = Modifier.padding(start = 16.dp, top = 32.dp, end = 16.dp),
-    color = MaterialTheme.colorScheme.primary,
-)
+private fun ConfirmableTextField(
+    initialValue: String,
+    label: String,
+    preview: (String) -> String?,
+    onConfirm: (String) -> Unit,
+) {
+    var text by remember { mutableStateOf(initialValue) }
+    var hint by remember { mutableStateOf(label) }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+    ) {
+        OutlinedTextField(
+            value = text,
+            onValueChange = { text = it },
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+            label = { Text(text = hint) }
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Button(
+            onClick = {
+                val result = preview(text)
+                hint = result ?: "error"
+                if (result != null) {
+                    onConfirm(text)
+                }
+            }
+        ) {
+            Text(text = stringResource(id = R.string.confirm))
+        }
+    }
+}
+
+/**
+ * BCP 47 言語タグ（`ja` / `en-US` など）を [Locale] に変換する。
+ * 空欄や解釈できない値の場合は null を返し、呼び出し側でシステム言語にフォールバックする。
+ */
+private fun parseLocaleTag(tag: String): Locale? {
+    val trimmed = tag.trim()
+    if (trimmed.isEmpty()) return null
+    return runCatching {
+        Locale.forLanguageTag(trimmed.replace('_', '-'))
+    }.getOrNull()?.takeIf { it.language.isNotEmpty() }
+}
+
+@Composable
+private fun rememberDateLocale(tag: String): Locale {
+    val systemLocale = Locale.getDefault(Locale.Category.FORMAT)
+    return remember(tag, systemLocale) { parseLocaleTag(tag) ?: systemLocale }
+}
+
+/** 設定画面のサマリーに表示する、ステータスバー時計のプレビュー文字列。 */
+private fun clockPreview(
+    timeFormat: String,
+    dateFormat: String,
+    separator: String,
+    dateBeforeTime: Boolean,
+    locale: Locale,
+): String {
+    val now = LocalDateTime.now()
+    fun render(pattern: String) = runCatching {
+        DateTimeFormatter.ofPattern(pattern, locale).format(now)
+    }.getOrDefault("?")
+
+    val time = render(timeFormat)
+    val date = render(dateFormat)
+    return if (dateBeforeTime) "$date$separator$time" else "$time$separator$date"
+}
 
 @Composable
 private fun PowerMenuActionEditor(
@@ -929,6 +1290,18 @@ sealed interface SystemUIEvent {
         value class HideBatteryIcon(val value: Boolean) : StatusBar
 
         @JvmInline
+        value class UseCircleBatteryIcon(val value: Boolean) : StatusBar
+
+        @JvmInline
+        value class CircleBatteryIconSizeDp(val value: Float) : StatusBar
+
+        @JvmInline
+        value class CircleBatteryIconHorizontalPaddingDp(val value: Float) : StatusBar
+
+        @JvmInline
+        value class CircleBatteryIconVerticalPaddingDp(val value: Float) : StatusBar
+
+        @JvmInline
         value class AddBatteryLevelText(val value: Boolean) : StatusBar
 
         @JvmInline
@@ -936,6 +1309,9 @@ sealed interface SystemUIEvent {
 
         @JvmInline
         value class HideBatteryLevelTextChargingIcon(val value: Boolean) : StatusBar
+
+        @JvmInline
+        value class BatteryLevelTextPercentSignScale(val value: Float) : StatusBar
 
         @JvmInline
         value class SupportRealTimeNetworkSpeed(val value: Boolean) : StatusBar
@@ -948,6 +1324,27 @@ sealed interface SystemUIEvent {
 
         @JvmInline
         value class StatusBarClockFormat(val value: String) : StatusBar
+
+        @JvmInline
+        value class AppendStatusBarClockDate(val value: Boolean) : StatusBar
+
+        @JvmInline
+        value class StatusBarClockDateFormat(val value: String) : StatusBar
+
+        @JvmInline
+        value class StatusBarClockDateSeparator(val value: String) : StatusBar
+
+        @JvmInline
+        value class StatusBarClockDateBeforeTime(val value: Boolean) : StatusBar
+
+        @JvmInline
+        value class StatusBarClockDateTextScale(val value: Float) : StatusBar
+
+        @JvmInline
+        value class StatusBarClockDateOffsetDp(val value: Float) : StatusBar
+
+        @JvmInline
+        value class StatusBarClockDateLocale(val value: String) : StatusBar
 
         @JvmInline
         value class UpdateStatusBarClockEverySecond(val value: Boolean) : StatusBar
@@ -1187,6 +1584,46 @@ private fun SettingViewModel.onStatusBarEvent(event: SystemUIEvent.StatusBar) {
                 )
             }
 
+            is SystemUIEvent.StatusBar.UseCircleBatteryIcon -> {
+                preference.copy(
+                    systemUI = preference.systemUI.copy(
+                        statusBar = preference.systemUI.statusBar.copy(
+                            useCircleBatteryIcon = event.value
+                        )
+                    )
+                )
+            }
+
+            is SystemUIEvent.StatusBar.CircleBatteryIconSizeDp -> {
+                preference.copy(
+                    systemUI = preference.systemUI.copy(
+                        statusBar = preference.systemUI.statusBar.copy(
+                            circleBatteryIconSizeDp = event.value
+                        )
+                    )
+                )
+            }
+
+            is SystemUIEvent.StatusBar.CircleBatteryIconHorizontalPaddingDp -> {
+                preference.copy(
+                    systemUI = preference.systemUI.copy(
+                        statusBar = preference.systemUI.statusBar.copy(
+                            circleBatteryIconHorizontalPaddingDp = event.value
+                        )
+                    )
+                )
+            }
+
+            is SystemUIEvent.StatusBar.CircleBatteryIconVerticalPaddingDp -> {
+                preference.copy(
+                    systemUI = preference.systemUI.copy(
+                        statusBar = preference.systemUI.statusBar.copy(
+                            circleBatteryIconVerticalPaddingDp = event.value
+                        )
+                    )
+                )
+            }
+
             is SystemUIEvent.StatusBar.AddBatteryLevelText -> {
                 preference.copy(
                     systemUI = preference.systemUI.copy(
@@ -1212,6 +1649,16 @@ private fun SettingViewModel.onStatusBarEvent(event: SystemUIEvent.StatusBar) {
                     systemUI = preference.systemUI.copy(
                         statusBar = preference.systemUI.statusBar.copy(
                             hideBatteryLevelTextChargingIcon = event.value
+                        )
+                    )
+                )
+            }
+
+            is SystemUIEvent.StatusBar.BatteryLevelTextPercentSignScale -> {
+                preference.copy(
+                    systemUI = preference.systemUI.copy(
+                        statusBar = preference.systemUI.statusBar.copy(
+                            batteryLevelTextPercentSignScale = event.value
                         )
                     )
                 )
@@ -1253,6 +1700,76 @@ private fun SettingViewModel.onStatusBarEvent(event: SystemUIEvent.StatusBar) {
                     systemUI = preference.systemUI.copy(
                         statusBar = preference.systemUI.statusBar.copy(
                             statusBarClockFormat = event.value
+                        )
+                    )
+                )
+            }
+
+            is SystemUIEvent.StatusBar.AppendStatusBarClockDate -> {
+                preference.copy(
+                    systemUI = preference.systemUI.copy(
+                        statusBar = preference.systemUI.statusBar.copy(
+                            appendStatusBarClockDate = event.value
+                        )
+                    )
+                )
+            }
+
+            is SystemUIEvent.StatusBar.StatusBarClockDateFormat -> {
+                preference.copy(
+                    systemUI = preference.systemUI.copy(
+                        statusBar = preference.systemUI.statusBar.copy(
+                            statusBarClockDateFormat = event.value
+                        )
+                    )
+                )
+            }
+
+            is SystemUIEvent.StatusBar.StatusBarClockDateSeparator -> {
+                preference.copy(
+                    systemUI = preference.systemUI.copy(
+                        statusBar = preference.systemUI.statusBar.copy(
+                            statusBarClockDateSeparator = event.value
+                        )
+                    )
+                )
+            }
+
+            is SystemUIEvent.StatusBar.StatusBarClockDateBeforeTime -> {
+                preference.copy(
+                    systemUI = preference.systemUI.copy(
+                        statusBar = preference.systemUI.statusBar.copy(
+                            statusBarClockDateBeforeTime = event.value
+                        )
+                    )
+                )
+            }
+
+            is SystemUIEvent.StatusBar.StatusBarClockDateTextScale -> {
+                preference.copy(
+                    systemUI = preference.systemUI.copy(
+                        statusBar = preference.systemUI.statusBar.copy(
+                            statusBarClockDateTextScale = event.value
+                        )
+                    )
+                )
+            }
+
+            is SystemUIEvent.StatusBar.StatusBarClockDateOffsetDp -> {
+                preference.copy(
+                    systemUI = preference.systemUI.copy(
+                        statusBar = preference.systemUI.statusBar.copy(
+                            statusBarClockDateOffsetDp = event.value
+                        )
+                    )
+                )
+            }
+
+            is SystemUIEvent.StatusBar.StatusBarClockDateLocale -> {
+                preference.copy(
+                    systemUI = preference.systemUI.copy(
+                        statusBar = preference.systemUI.statusBar.copy(
+                            statusBarClockDateLocale = event.value
                         )
                     )
                 )

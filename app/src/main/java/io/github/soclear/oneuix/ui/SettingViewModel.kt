@@ -27,7 +27,7 @@ import java.io.OutputStream
 class SettingViewModel(application: Application) : ViewModel() {
     val categoryAppInfoList: StateFlow<List<CategoryAppInfo>> = flow {
         val packageManager = application.packageManager
-        val categoryAppInfoList = Category.entries.mapNotNull { category ->
+        val categoryAppInfoList = Category.preferenceEntries.mapNotNull { category ->
             val applicationInfo = try {
                 packageManager.getApplicationInfo(category.packageName, 0)
             } catch (_: PackageManager.NameNotFoundException) {
@@ -54,6 +54,24 @@ class SettingViewModel(application: Application) : ViewModel() {
         viewModelScope.launch {
             dataStore.updateData {
                 nextPreference(it)
+            }
+        }
+    }
+
+    /**
+     * カテゴリ 1 つ分の設定だけを初期値に戻す。
+     * 他のカテゴリの設定には触れないので、誤って全部消えることがない。
+     */
+    fun resetCategory(category: Category) {
+        updateData { preference ->
+            when (category) {
+                Category.Android -> preference.copy(android = Preference.Android())
+                Category.SystemUI -> preference.copy(systemUI = Preference.SystemUI())
+                Category.Settings -> preference.copy(settings = Preference.Settings())
+                Category.Call -> preference.copy(call = Preference.Call())
+                Category.Camera -> preference.copy(camera = Preference.Camera())
+                Category.Other -> preference.copy(other = Preference.Other())
+                Category.About -> preference
             }
         }
     }

@@ -9,7 +9,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.ui.Modifier
 import androidx.datastore.dataStoreFile
@@ -57,8 +59,12 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             OneUIXTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    SettingScreen(viewModel = viewModel, modifier = Modifier.padding(innerPadding))
+                // 各ペインが自前の Scaffold でインセットを処理するので、ここでは重ねない。
+                Surface(
+                    color = MaterialTheme.colorScheme.background,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    SettingScreen(viewModel = viewModel)
                 }
             }
         }

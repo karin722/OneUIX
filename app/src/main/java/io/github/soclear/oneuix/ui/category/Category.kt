@@ -9,5 +9,18 @@ enum class Category(val packageName: String) {
     Settings(Package.SETTINGS),
     Call(Package.DIALER),
     Camera(Package.CAMERA),
-    Other(BuildConfig.APPLICATION_ID);
+    Other(BuildConfig.APPLICATION_ID),
+
+    /**
+     * 「One UI X について」。設定項目を持たないので、
+     * 対象アプリの一覧（[CategoryAppInfo]）には含めない。
+     */
+    About(BuildConfig.APPLICATION_ID);
+
+    /** 設定項目を持つカテゴリかどうか。リセットや検索の対象にできる。 */
+    val hasPreferences: Boolean get() = this != About
+
+    companion object {
+        val preferenceEntries: List<Category> = entries.filter { it.hasPreferences }
+    }
 }
