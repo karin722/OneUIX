@@ -33,6 +33,13 @@ fun DetailPaneLauncher(
             onCheckedChange = { onEvent(LauncherEvent.HideAppsSearchBar(it)) }
         )
         SwitchItem(
+            icon = ImageVector.vectorResource(id = R.drawable.dock_to_bottom),
+            title = stringResource(id = R.string.unlockFoldTaskbar_title),
+            summary = stringResource(id = R.string.unlockFoldTaskbar_summary),
+            checked = uiState.unlockFoldTaskbar,
+            onCheckedChange = { onEvent(LauncherEvent.UnlockFoldTaskbar(it)) }
+        )
+        SwitchItem(
             icon = ImageVector.vectorResource(id = R.drawable.position_bottom_right),
             title = stringResource(id = R.string.removeShortcutBadge_title),
             summary = stringResource(id = R.string.removeShortcutBadge_summary),
@@ -50,6 +57,9 @@ sealed interface LauncherEvent {
     value class HideAppsSearchBar(val value: Boolean) : LauncherEvent
 
     @JvmInline
+    value class UnlockFoldTaskbar(val value: Boolean) : LauncherEvent
+
+    @JvmInline
     value class RemoveShortcutBadge(val value: Boolean) : LauncherEvent
 }
 
@@ -65,6 +75,12 @@ fun SettingViewModel.onLauncherEvent(event: LauncherEvent) {
             is LauncherEvent.HideAppsSearchBar -> preference.copy(
                 other = preference.other.copy(
                     hideAppsSearchBar = event.value
+                )
+            )
+
+            is LauncherEvent.UnlockFoldTaskbar -> preference.copy(
+                other = preference.other.copy(
+                    unlockFoldTaskbar = event.value
                 )
             )
 

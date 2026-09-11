@@ -24,9 +24,11 @@ import de.robv.android.xposed.XposedHelpers.findAndHookMethod
 import de.robv.android.xposed.XposedHelpers.findClass
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import io.github.soclear.oneuix.data.Package
+import io.github.soclear.oneuix.hook.util.afterAttach
 import java.io.File
 import java.lang.ref.WeakReference
 import java.lang.reflect.Constructor
+import java.lang.reflect.Modifier
 import kotlin.math.roundToInt
 
 
@@ -428,4 +430,139 @@ object Launcher {
             XposedBridge.log(t)
         }
     }
+
+    /**
+     * Fold / タブレット限定になっているタスクバー（画面下端のドック）を、
+     * 通常のバー型端末でも選べるようにする。
+     *
+     * ランチャー（ honeyspace ）は「この端末はタスクバーに対応しているか」を
+     * `com.honeyspace.sdk.Rune` などのフラグで判定しているが、そのメンバー名は One UI のバージョンで揺れる。
+     * そこで名前を決め打ちせず、「対応・利用可否」を表すメンバーだけを総当たりで拾って
+     * true に固定する。ユーザー自身の ON/OFF （ホーム画面設定のタスクバー）には触れないので、
+     * 解放したあとの表示・非表示は本人が切り替えられる。
+     */
+    fun unlockFoldTaskbar(loadPackageParam: LoadPackageParam) {
+        if (loadPackageParam.packageName != Package.LAUNCHER) return
+
+        afterAttach {
+            val applied = TASKBAR_FEATURE_CLASSES.flatMap { className ->
+                forceTaskbarCapability(className, loadPackageParam.classLoader)
+            }
+
+            forceTaskbarFloatingFeature(loadPackageParam)
+
+            if (applied.isEmpty()) {
+                // 名前が変わった／既に true だった場合。ログだけ残して何もしない。
+                XposedBridge.log("OneUIX unlockFoldTaskbar: no taskbar capability member matched")
+            } else {
+                XposedBridge.log("OneUIX unlockFoldTaskbar: ${applied.joinToString()}")
+            }
+        }
+    }
+
+    /** タスクバーの対応可否を持っているフィーチャーフラグ置き場。 */
+    private val TASKBAR_FEATURE_CLASSES = listOf(
+        "com.honeyspace.sdk.Rune",
+        "com.samsung.android.rune.CoreRune",
+    )
+
+    private val TASKBAR_NAME_REGEX = Regex("TASK_?BAR", RegexOption.IGNORE_CASE)
+
+    /** 「対応している」側のフラグだけを対象にする。ユーザー設定の ON/OFF は含めない。 */
+    private val CAPABILITY_NAME_REGEX = Regex("SUPPORT|AVAILABLE|ALLOW", RegexOption.IGNORE_CASE)
+
+    /** 意味が反転しているフラグ（ 未対応・禁止・非表示 ）を誤って true にしないための除外。 */
+    private val NEGATIVE_NAME_REGEX =
+        Regex("NOT|UNSUPPORT|DISABLE|BLOCK|HIDE|REMOVE|RESTRICT", RegexOption.IGNORE_CASE)
+
+    private fun isTaskbarCapabilityName(name: String): Boolean =
+        TASKBAR_NAME_REGEX.containsMatchIn(name) &&
+                CAPABILITY_NAME_REGEX.containsMatchIn(name) &&
+                !NEGATIVE_NAME_REGEX.containsMatchIn(name)
+
+    /**
+     * [className] の中からタスクバー対応フラグを探して true に固定し、
+     * 実際に書き換えたメンバー名を返す。
+     */
+    private fun forceTaskbarCapability(className: String, classLoader: ClassLoader): List<String> {
+        // フラグは静的初期化子で端末種別から計算されるので、
+        // 先に <clinit> を走らせてから上書きしないと計算結果で戻される。
+        val clazz = try {
+            Class.forName(className, true, classLoader)
+        } catch (t: Throwable) {
+            return emptyList()
+        }
+
+        val applied = mutableListOf<String>()
+
+        clazz.declaredFields.forEach { field ->
+            if (!Modifier.isStatic(field.modifiers)) return@forEach
+            if (field.type != Boolean::class.javaPrimitiveType) return@forEach
+            if (!isTaskbarCapabilityName(field.name)) return@forEach
+            try {
+                field.isAccessible = true
+                if (field.getBoolean(null)) return@forEach
+                field.setBoolean(null, true)
+                applied += "${clazz.simpleName}.${field.name}"
+            } catch (t: Throwable) {
+                // val （ final ）で書き換えられないものはゲッター側のフックに任せる。
+                XposedBridge.log(t)
+            }
+        }
+
+        // Kotlin の val はフィールドが private final になり、公開されるのはゲッターだけ。
+        clazz.declaredMethods.forEach { method ->
+            if (method.parameterTypes.isNotEmpty()) return@forEach
+            if (method.returnType != Boolean::class.javaPrimitiveType) return@forEach
+            if (!isTaskbarCapabilityName(method.name)) return@forEach
+            try {
+                XposedBridge.hookMethod(method, XC_MethodReplacement.returnConstant(true))
+                applied += "${clazz.simpleName}#${method.name}()"
+            } catch (t: Throwable) {
+                XposedBridge.log(t)
+            }
+        }
+
+        return applied
+    }
+
+    /** CSC の隠しフィーチャー側でも弾かれることがあるので、タスクバー関連のキーだけ通す。 */
+    private fun forceTaskbarFloatingFeature(loadPackageParam: LoadPackageParam) {
+        val callback = object : XC_MethodHook() {
+            override fun afterHookedMethod(param: MethodHookParam) {
+                val key = param.args.firstOrNull() as? String ?: return
+                if (isTaskbarCapabilityName(key)) {
+                    param.result = true
+                }
+            }
+        }
+
+        try {
+            findAndHookMethod(
+                SEM_FLOATING_FEATURE_CLASS,
+                loadPackageParam.classLoader,
+                "getBoolean",
+                String::class.java,
+                callback
+            )
+        } catch (t: Throwable) {
+            XposedBridge.log(t)
+        }
+
+        try {
+            findAndHookMethod(
+                SEM_FLOATING_FEATURE_CLASS,
+                loadPackageParam.classLoader,
+                "getBoolean",
+                String::class.java,
+                Boolean::class.javaPrimitiveType,
+                callback
+            )
+        } catch (t: Throwable) {
+            XposedBridge.log(t)
+        }
+    }
+
+    private const val SEM_FLOATING_FEATURE_CLASS =
+        "com.samsung.android.feature.SemFloatingFeature"
 }

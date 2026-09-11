@@ -140,6 +140,8 @@
     <string name="setCustomCarrierName_title">自定义运营商名称</string>
     <string name="hideLockscreenStatusBar_title">隐藏锁屏界面的状态栏</string>
     <string name="hideAppsSearchBar_title">隐藏应用屏幕搜索栏</string>
+    <string name="unlockFoldTaskbar_title">解锁 Fold 专属任务栏（Dock）</string>
+    <string name="unlockFoldTaskbar_summary">让 One UI 仅对折叠屏和平板开放的底部任务栏在其他机型上也可选。开启后请在主屏幕设置中打开任务栏，并重启启动器</string>
     <string name="removeShortcutBadge_title">移除快捷方式图标右下角小角标</string>
     <string name="removeShortcutBadge_summary">去掉桌面快捷方式图标右下角的原 APP 小角标</string>
     <string name="watchPairing_connectionMode_title">手表连接模式</string>

@@ -51,6 +51,7 @@ val SettingSearchIndex: List<SettingSearchEntry> = listOf(
     SettingSearchEntry(Category.HealthMonitor, null, R.string.bypassHealthMonitorCountryCheck_title, R.string.bypassHealthMonitorCountryCheck_summary),
     SettingSearchEntry(Category.Launcher, null, R.string.showMemoryUsageInRecents_title, null),
     SettingSearchEntry(Category.Launcher, null, R.string.hideAppsSearchBar_title, null),
+    SettingSearchEntry(Category.Launcher, null, R.string.unlockFoldTaskbar_title, R.string.unlockFoldTaskbar_summary),
     SettingSearchEntry(Category.Launcher, null, R.string.removeShortcutBadge_title, R.string.removeShortcutBadge_summary),
     SettingSearchEntry(Category.Messaging, null, R.string.supportBlockMessage_title, null),
     SettingSearchEntry(Category.Notes, null, R.string.supportAllNotesFeatures_title, R.string.supportAllNotesFeatures_summary),
