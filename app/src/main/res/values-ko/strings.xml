@@ -133,7 +133,7 @@
     <string name="hideLockscreenStatusBar_title">잠금 화면에서 상태바 숨기기</string>
     <string name="hideAppsSearchBar_title">앱스 화면에서 검색창 숨기기</string>
     <string name="unlockFoldTaskbar_title">폴드 전용 태스크바(독) 해제</string>
-    <string name="unlockFoldTaskbar_summary">One UI가 폴더블과 태블릿에만 제공하는 하단 태스크바를 다른 기기에서도 사용할 수 있게 합니다. 해제한 뒤 홈 화면 설정에서 켜고 런처를 다시 시작하세요</string>
+    <string name="unlockFoldTaskbar_summary">실험적: 이 One UI에서 스와이프 태스크바를 막는 지점을 아직 특정하지 못했습니다. 찾은 지원 플래그를 true로 만들고, 런처 내부의 태스크바 관련 실제 이름을 Xposed 로그에 남깁니다. 그 로그가 실제 차단 지점을 찾는 단서가 됩니다. 런처 시작이 몇 초 느려질 수 있습니다</string>
     <string name="removeShortcutBadge_title">바로가기 우측 하단 배지 제거</string>
     <string name="removeShortcutBadge_summary">홈 화면 바로가기 아이콘 오른쪽 아래에 표시되는 원본 앱의 소스 배지를 제거합니다</string>
     <string name="watchPairing_connectionMode_title">워치 연결 모드</string>

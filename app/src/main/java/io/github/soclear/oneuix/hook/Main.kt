@@ -163,7 +163,7 @@ class Main : IXposedHookLoadPackage, IXposedHookInitPackageResources, IXposedHoo
                 }
 
                 if (preference.other.unlockFoldTaskbar) {
-                    Launcher.unlockFoldTaskbar(lpparam)
+                    LauncherTaskbar.unlockFoldTaskbar(lpparam)
                 }
             }
 

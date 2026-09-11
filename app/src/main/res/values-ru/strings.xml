@@ -133,7 +133,7 @@
     <string name="hideLockscreenStatusBar_title">Скрыть строку состояния на экране блокировки</string>
     <string name="hideAppsSearchBar_title">Скрыть строку поиска на экране приложений</string>
     <string name="unlockFoldTaskbar_title">Разблокировать панель задач (док) для Fold</string>
-    <string name="unlockFoldTaskbar_summary">Сделать нижнюю панель задач доступной на устройствах, где One UI оставляет её только складным устройствам и планшетам. После разблокировки включите её в настройках главного экрана и перезапустите лаунчер</string>
+    <string name="unlockFoldTaskbar_summary">Экспериментально: на этой версии One UI ещё не найдено, что именно ограничивает панель задач по свайпу складными устройствами. Опция включает найденные флаги поддержки и записывает в журнал Xposed внутренние имена, связанные с панелью задач, — по ним и определяется настоящее ограничение. Запуск лаунчера может замедлиться на несколько секунд</string>
     <string name="removeShortcutBadge_title">Убрать значок в правом нижнем углу ярлыка</string>
     <string name="removeShortcutBadge_summary">Убрать маленький значок исходного приложения в правом нижнем углу ярлыков на рабочем столе</string>
     <string name="watchPairing_connectionMode_title">Режим подключения часов</string>
