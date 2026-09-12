@@ -125,6 +125,8 @@ static {
 | `com.honeyspace.common.Rune$Companion#getHOME_SUPPORT_TASKBAR()` | 常に true |
 | `TaskbarControllerImpl#getTaskbarStyleInfo(boolean, boolean, boolean)` | 第 1 引数 `available` を true に差し替え |
 | `TaskbarUtilImpl#getTaskbarEnabled()` | 常に true |
+| `com.honeyspace.common.Rune$Companion#getSUPPORT_EDIT_ON_TASKBAR()` | 常に true（ タスクバー上でアイコンを掴めるようにする ） |
+| `Resources#getDrawable(int, Theme)` | `ic_all_apps` の要求を、現在のモードに合う 1 枚に差し替え |
 
 設計上の判断を 2 点。
 
@@ -137,12 +139,106 @@ static {
 **システム設定は書き換えない。** `sem_task_bar_available` や `task_bar` に値を書けば恒久的に残ってしまう。
 代わりに読み出しの合流点をフックしているので、モジュールのスイッチを切れば元の挙動に戻る。
 
+## 解放したあとに出た不具合と、その原因
+
+実機（ SM-S931Z / One UI 8.5 ）でタスクバーが出たあと、2 つの症状が出た。どちらも実機ログで裏を取っている。
+
+### ライトモードでアプリ一覧ボタンが白いまま
+
+`R.drawable.ic_all_apps` は 2 枚重ねの layer-list になっている。
+
+```xml
+<layer-list>
+    <item android:drawable="@drawable/ic_all_apps_light"/>   <!-- 白いアイコン -->
+    <item android:drawable="@drawable/ic_all_apps_dark"/>    <!-- 黒いアイコン -->
+</layer-list>
+```
+
+タスクバーの Pot はこの 2 枚の alpha を振り分けて色を切り替えるが、その配分は
+**ナビゲーションバーの darkIntensity** から計算している。
+
+```java
+// 非フローティング（ 通常のタスクバー ）の分岐
+float f = isDexSpace ? dexDarkIntensity : navButtonsDarkIntensity;
+layer0.setAlpha((int) (comp(f) * 255.0f));   // ic_all_apps_light
+layer1.setAlpha((int) (f * 255.0f));         // ic_all_apps_dark
+```
+
+`navButtonsDarkIntensity` に値が入るのは `TaskbarEvent.NavButtonsDarkIntensityChanged` を
+受け取ったときだけで、これは SystemUI から飛んでくる。バー型端末では SystemUI 側が
+タスクバーの存在を知らない（ `sem_task_bar_available = 0` のまま ）ので**このイベントが一度も来ない**。
+結果、フィールドは初期値の `0.0f` のままになり、`comp(0.0f) = 1.0f` で
+白いレイヤーだけが不透明になる。実機ログにも `updateDarkIntensity:` は一度も出ていない。
+
+なお、フローティング形状の分岐では同じ処理が `uiMode` を直接見ていて正しく切り替わる。
+つまり通常形状のタスクバーだけが SystemUI 頼みになっている。
+
+**対処**: 色を塗る側ではなく、渡す絵のほうを差し替えた。タスクバーの合成処理は
+「 LayerDrawable でなければそのまま返す 」という早期 return を持っているので、
+layer-list ではなく現在のモードに合う 1 枚（ 夜なら `ic_all_apps_light`、昼なら `ic_all_apps_dark` ）を
+返せば、darkIntensity の計算ごと素通りする。`ic_all_apps` を参照しているのは
+タスクバーのこのボタン 1 箇所だけなので、他への影響はない。
+
+### タスクバーにアプリを追加できない
+
+トーストは `exceed_hotseat_max_count`（ お気に入りとして追加するスペースがありません ）で、
+これを出しているのは **`HotseatOnHomeDragOperator`**、つまりホーム画面側のドロップ処理だった。
+
+```
+HotseatPot@72235236: resolveDragOperator parentType = TASKBAR → HotseatOnTaskbarDragOperator
+HotseatOnHomeDragOperator: handleDrop show maxCount toast        ← 実際に処理したのはこちら
+HomeView: dispatchDragEvent ... fromHoney=WORKSPACE
+```
+
+タスクバー用の operator は正しく割り当たっているのに、受け取りを断って下のホーム画面に
+すり抜けていた。その門番が `Rune.SUPPORT_EDIT_ON_TASKBAR` で、
+
+```java
+// HotseatOnTaskbarDragOperator
+if (Rune.INSTANCE.getSUPPORT_EDIT_ON_TASKBAR() || taskbarUtil.getEditTaskbarHomeUpEnabled()) {
+    // 通常のドラッグ処理
+}
+```
+
+この定数は**ビルド時から false 固定**で、Fold でも false。本来は Good Lock の Home Up にある
+「タスクバーを編集」で `editTaskbarHomeUpEnabled` 側を true にするのが Samsung の想定経路になっている。
+参照している 10 箇所あまりがすべて `SUPPORT_EDIT_ON_TASKBAR || editTaskbarHomeUpEnabled` の形なので、
+Rune 側を true にするのは Home Up と同じ分岐に乗るだけで済む。
+
+**対処**: `Rune$Companion#getSUPPORT_EDIT_ON_TASKBAR()` を true にした。
+
+### ドックの上限は 5 個で、ホーム画面と共有している（ 未対処 ）
+
+上とは別に、**ドックに入る数そのもの**がバー型端末では 5 個に固定されている。
+
+```java
+// HotseatViewModel.K() — ドックの最大数
+if (displayType == MAIN) {
+    return (isHomeOnlySpace() || !coverMainSync) ? C() : getHotseatCount();
+}
+// C() = getHotseatCountForCover() ?: getHotseatCount()
+```
+
+バー型端末では `coverMainSync` が null なので `C()` に落ち、`hotseatCountForCover` の
+**5** が返る（ `AbsDefaultPreferenceValue` で機種によらず 5 に設定されている ）。
+
+タスクバーとホーム画面のドックは同じコンテナなので、この 5 枠は両者で共有される。
+実機ログでも 3 つの別々のアプリをドックに入れようとしてすべて弾かれており、
+単純に 5 枠が埋まっている状態だった。これは Fold でも同じ仕組みで、
+タスクバー解放とは独立した One UI 本来の挙動なので、このモジュールでは触っていない。
+
+上限を上げるなら `PreferenceDataSource#getHotseatCountForCover()` を null にして
+`hotseatCount` 側へ落とす手があるが、**ホーム画面のドックの見た目も一緒に変わる**ため、
+副作用の説明なしに入れるべきではないと判断した。
+
 ## 制限と既知のリスク
 
-- 確認済みなのは One UI 8.5 / SM-S931Z の APK 解析まで。**実機での動作確認は未実施**
+- One UI 8.5 / SM-S931Z の実機でタスクバーが出ることは確認済み（ ログに `rune=true` ）
 - クラス名・メソッド名は One UI のバージョンで変わりうる。変わった場合はフックが黙って外れる
   （ 各フックは個別に try/catch していて、失敗は Xposed のログに出る ）
 - フローティング形状のタスクバーと、最近アプリ画面でのタスクバー維持は対象外（ 上記 `ModelFeature` の項を参照 ）
+- ドックの枠は 5 個のままで、ホーム画面のドックと共有している（ 上記の項を参照 ）
+- アプリ一覧ボタンの色は、モード切り替え後にタスクバーが作り直されるまで反映されないことがある
 - 設定アプリ側のタスクバー関連メニューは、システム側が `sem_task_bar_available = 0` のままなので出てこない可能性がある
 
 ## 動作確認の手順

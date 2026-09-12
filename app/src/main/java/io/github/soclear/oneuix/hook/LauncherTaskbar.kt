@@ -1,5 +1,7 @@
 package io.github.soclear.oneuix.hook
 
+import android.content.res.Configuration
+import android.content.res.Resources
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XC_MethodReplacement
 import de.robv.android.xposed.XposedBridge
@@ -53,6 +55,8 @@ object LauncherTaskbar {
         forceRuneTaskbarSupport(loadPackageParam)
         forceTaskbarAvailable(loadPackageParam)
         forceTaskbarEnabled(loadPackageParam)
+        fixAllAppsButtonTint(loadPackageParam)
+        allowEditOnTaskbar(loadPackageParam)
     }
 
     /**
@@ -165,5 +169,110 @@ object LauncherTaskbar {
         } catch (t: Throwable) {
             XposedBridge.log(t)
         }
+    }
+
+    // ------------------------------------------------------------------
+    // 解放したあとに出てくる不具合の手当て
+    // ------------------------------------------------------------------
+
+    /**
+     * タスクバーの上でアイコンを掴めるようにする。
+     *
+     * `Rune.SUPPORT_EDIT_ON_TASKBAR` はビルド時から `false` 固定で、
+     * 参照側はどこも `SUPPORT_EDIT_ON_TASKBAR || TaskbarUtil.editTaskbarHomeUpEnabled` という形をしている。
+     * つまり本来は Good Lock の Home Up にある「タスクバーを編集」でしか true にならない。
+     *
+     * これが false のあいだ、タスクバーのホットシートはドロップ先として振る舞わないので、
+     * タスクバーの上に落としたつもりのアイコンは下のホーム画面にすり抜けて、
+     * ホーム側のドックが満杯だと「お気に入りとして追加するスペースがありません」になる。
+     *
+     * Home Up が入れる値と同じ経路なので、ここを true にするのは既存の分岐に乗るだけで済む。
+     */
+    private fun allowEditOnTaskbar(loadPackageParam: LoadPackageParam) {
+        try {
+            findAndHookMethod(
+                RUNE_COMPANION_CLASS,
+                loadPackageParam.classLoader,
+                "getSUPPORT_EDIT_ON_TASKBAR",
+                XC_MethodReplacement.returnConstant(true)
+            )
+        } catch (t: Throwable) {
+            XposedBridge.log(t)
+        }
+    }
+
+    /** 一度引いたら変わらないので覚えておく。0 は「見つからなかった」の意味で使う。 */
+    private var allAppsIconId = -1
+    private var allAppsIconLightId = 0
+    private var allAppsIconDarkId = 0
+
+    /**
+     * タスクバーのアプリ一覧ボタンがライトモードでも白いままになるのを直す。
+     *
+     * `ic_all_apps` は `ic_all_apps_light`（ 白 ）と `ic_all_apps_dark`（ 黒 ）を重ねた layer-list で、
+     * どちらを見せるかはレイヤーの alpha で決まる。タスクバーはその alpha を
+     * ナビゲーションバーの darkIntensity から計算しているが、この値が入るのは
+     * `TaskbarEvent.NavButtonsDarkIntensityChanged` を受け取ったときだけ。
+     * バー型端末では SystemUI 側がタスクバーの存在を知らないのでこのイベントが一度も来ず、
+     * 既定値の 0.0f のまま固定される。0.0f は「白いレイヤーだけ不透明」を意味するので、
+     * ライトモードでも白いアイコンが出続ける。
+     *
+     * タスクバー側の合成処理は「 LayerDrawable でなければそのまま返す 」という作りなので、
+     * layer-list ではなく現在のモードに合う 1 枚だけを返してやれば素通りする。
+     * `ic_all_apps` を参照しているのはタスクバーのこのボタンだけなので、影響範囲も閉じている。
+     */
+    private fun fixAllAppsButtonTint(loadPackageParam: LoadPackageParam) {
+        try {
+            findAndHookMethod(
+                Resources::class.java,
+                "getDrawable",
+                Int::class.javaPrimitiveType,
+                Resources.Theme::class.java,
+                object : XC_MethodHook() {
+                    override fun beforeHookedMethod(param: MethodHookParam) {
+                        val resources = param.thisObject as? Resources ?: return
+                        val requested = param.args[0] as? Int ?: return
+                        if (requested != layerListId(resources)) return
+
+                        val night = resources.configuration.uiMode and
+                                Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+                        val replacement = if (night) {
+                            lightIconId(resources)
+                        } else {
+                            darkIconId(resources)
+                        }
+                        if (replacement != 0) {
+                            param.args[0] = replacement
+                        }
+                    }
+                }
+            )
+        } catch (t: Throwable) {
+            XposedBridge.log(t)
+        }
+    }
+
+    private fun layerListId(resources: Resources): Int {
+        if (allAppsIconId == -1) {
+            allAppsIconId = resources.getIdentifier("ic_all_apps", "drawable", Package.LAUNCHER)
+        }
+        // 見つからなかった場合の 0 は、どの実リソース ID とも一致しないので実害がない。
+        return allAppsIconId
+    }
+
+    private fun lightIconId(resources: Resources): Int {
+        if (allAppsIconLightId == 0) {
+            allAppsIconLightId =
+                resources.getIdentifier("ic_all_apps_light", "drawable", Package.LAUNCHER)
+        }
+        return allAppsIconLightId
+    }
+
+    private fun darkIconId(resources: Resources): Int {
+        if (allAppsIconDarkId == 0) {
+            allAppsIconDarkId =
+                resources.getIdentifier("ic_all_apps_dark", "drawable", Package.LAUNCHER)
+        }
+        return allAppsIconDarkId
     }
 }
