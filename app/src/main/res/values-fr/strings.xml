@@ -132,8 +132,6 @@
     <string name="setCustomCarrierName_title">Définir le nom de l\'opérateur personnalisé</string>
     <string name="hideLockscreenStatusBar_title">Masquer la barre d\'état sur l\'écran de verrouillage</string>
     <string name="hideAppsSearchBar_title">Masquer la barre de recherche sur l\'écran des applications</string>
-    <string name="unlockFoldTaskbar_title">Débloquer la barre des tâches (dock) réservée aux Fold</string>
-    <string name="unlockFoldTaskbar_summary">Rend la barre des tâches par balayage disponible sur les téléphones classiques en levant les vérifications par lesquelles One UI la réserve aux pliables et aux tablettes. Aucun réglage système n\'est modifié : désactiver cette option rétablit le comportement d\'origine. Au premier démarrage suivant une mise à jour du lanceur, quelques secondes supplémentaires sont nécessaires pour localiser le code de mise en page</string>
     <string name="removeShortcutBadge_title">Supprimer le badge en bas à droite du raccourci</string>
     <string name="removeShortcutBadge_summary">Supprimer le badge de l\'application d\'origine situé dans le coin inférieur droit des icônes de raccourci de l\'écran d\'accueil</string>
     <string name="watchPairing_connectionMode_title">Mode de connexion de la montre</string>

@@ -161,10 +161,6 @@ class Main : IXposedHookLoadPackage, IXposedHookInitPackageResources, IXposedHoo
                 if (preference.other.removeShortcutBadge) {
                     Launcher.removeShortcutBadge(lpparam)
                 }
-
-                if (preference.other.unlockFoldTaskbar) {
-                    LauncherTaskbar.unlockFoldTaskbar(lpparam)
-                }
             }
 
             Package.MDEC_SERVICE -> {

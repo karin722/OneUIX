@@ -167,7 +167,6 @@ data class Preference(
         val bypassHealthMonitorCountryCheck: Boolean = false,
         val useSPenGoogleTranslate: Boolean = false,
         val hideAppsSearchBar: Boolean = false,
-        val unlockFoldTaskbar: Boolean = false,
         val removeShortcutBadge: Boolean = false,
         val bypassWatchPairingRegionCheck: Boolean = false,
         val watchPairingConnectionMode: Int = 0,

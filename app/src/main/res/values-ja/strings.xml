@@ -148,8 +148,6 @@
     <string name="setCustomCarrierName_title">通信事業者名を自由に設定</string>
     <string name="hideLockscreenStatusBar_title">ロック画面のステータスバーを隠す</string>
     <string name="hideAppsSearchBar_title">アプリ一覧画面の検索バーを隠す</string>
-    <string name="unlockFoldTaskbar_title">Fold 専用のタスクバー（ドック）を解放</string>
-    <string name="unlockFoldTaskbar_summary">One UI がタスクバーを Fold とタブレットに限定している判定を開けて、バー型端末でもスワイプでタスクバーを出せるようにします。システム設定は書き換えないので、オフにすれば元に戻ります。ランチャーの更新後の初回起動だけ、レイアウト処理を探すぶん数秒余分にかかります</string>
     <string name="removeShortcutBadge_title">ショートカット右下のバッジを消す</string>
     <string name="removeShortcutBadge_summary">ホーム画面のショートカット右下に付く、元アプリのバッジを消します</string>
     <string name="watchPairing_connectionMode_title">スマートウォッチの接続モード</string>

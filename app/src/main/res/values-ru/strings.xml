@@ -132,8 +132,6 @@
     <string name="setCustomCarrierName_title">Собственное имя оператора</string>
     <string name="hideLockscreenStatusBar_title">Скрыть строку состояния на экране блокировки</string>
     <string name="hideAppsSearchBar_title">Скрыть строку поиска на экране приложений</string>
-    <string name="unlockFoldTaskbar_title">Разблокировать панель задач (док) для Fold</string>
-    <string name="unlockFoldTaskbar_summary">Открывает проверки, которыми One UI ограничивает панель задач складными устройствами и планшетами, чтобы свайп вызывал её и на обычных смартфонах. Системные настройки не изменяются, поэтому выключение возвращает исходное поведение. При первом запуске после обновления лаунчера потребуется несколько лишних секунд на поиск кода разметки</string>
     <string name="removeShortcutBadge_title">Убрать значок в правом нижнем углу ярлыка</string>
     <string name="removeShortcutBadge_summary">Убрать маленький значок исходного приложения в правом нижнем углу ярлыков на рабочем столе</string>
     <string name="watchPairing_connectionMode_title">Режим подключения часов</string>
