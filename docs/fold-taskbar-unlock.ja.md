@@ -1,79 +1,163 @@
-# Fold 専用タスクバー（ドック）の解放 — 現状と調査手順
+# Fold 専用タスクバー（ドック）の解放
 
-One UI が Fold・タブレットにしか出さない「画面下端からスワイプすると出てくるドック
-（タスクバー）」を、バー型端末でも使えるようにするための機能です。
+Samsung のランチャー `com.sec.android.app.launcher`（ honeyspace ）は、画面下端からスワイプで出るタスクバーを
+Fold とタブレットだけの機能にしている。この文書は、バー型端末でそれを開けるために**何がどこで塞いでいるのか**と、
+モジュールがそれをどう開けているのかを記録する。
 
-**重要：One UI 8 系ではまだ完成していません。** 実機で ON にしてもタスクバーは出ません。
-どこが門番なのかを特定できていないためで、現在この機能は
-**解放の試行 ＋ 門番を突き止めるための診断ログ出力**という位置づけです。
+## 調査方法
 
-## 何が分かっていないのか
-
-最初の実装は「`TASKBAR` を含み、かつ `SUPPORT` / `AVAILABLE` / `ALLOW` を含む boolean を
-true にする」という、**フラグ名を推測で当てにいったもの**でした。実機では何も起きなかったので、
-この推測は外れています。考えられる原因は次のとおりです。
-
-- フラグ名が推測と違う
-- そもそも boolean フラグではなく、**画面の最小幅（ `sw600dp` ）やデバイスプロファイル**で
-  分岐している（One UI のタスクバーはタブレット扱いの画面で出るため、こちらの可能性が高い）
-- 表示可否とスワイプ判定（ジェスチャ登録）が別のゲートになっている
-
-推測を重ねても当たらないので、**実名をログに出させて事実から決める**方針に切り替えました。
-
-## 使い方（調査に協力する場合）
-
-1. モジュール本体アプリ → **One UI ホーム（ランチャー）→ Fold 専用のタスクバー（ドック）を解放** を ON
-2. LSPosed のスコープに One UI ホーム（ `com.sec.android.app.launcher` ）が入っていることを確認
-3. ランチャーを再起動（ホーム画面に戻って別アプリを開き直す、または端末を再起動）
-4. LSPosed マネージャー → ログ、または `adb logcat -d | grep "OneUIX taskbar|"` でログを取得
-5. `---- diagnostics begin ----` から `---- diagnostics end ----` までを開発者に渡す
-
-診断のために DexKit でランチャーの dex を走査するので、**ランチャーの起動が数秒遅くなることがあります**。
-
-## ログの読み方
+推測ではなく実機の APK を読んだ。
 
 ```
-OneUIX taskbar| applied: none (対応フラグが 1 つも見つからなかった)
-OneUIX taskbar| ---- diagnostics begin ----
-OneUIX taskbar| device: SM-XXXX / sdk 36 / launcher 1400000000
-OneUIX taskbar| screen: smallestScreenWidthDp=411 screenWidthDp=411 ... densityDpi=450
-OneUIX taskbar| com.honeyspace.sdk.Rune: 42 boolean fields, showing 42
-OneUIX taskbar|   SUPPORT_XXX = false
-OneUIX taskbar| dexkit classes matching "taskbar": 37
-OneUIX taskbar|   com.honeyspace.ui.honeypots.taskbar.XXX
-OneUIX taskbar| ---- diagnostics end ----
+adb shell pm path com.sec.android.app.launcher
+adb pull /system/priv-app/TouchWizHome_2017/TouchWizHome_2017.apk
+jadx -d out --no-debug-info --show-bad-code TouchWizHome_2017.apk
 ```
 
-| 行 | 何が分かるか |
-|---|---|
-| `applied:` | `none` なら対応フラグが 1 つも存在しない＝ゲートはフラグではない可能性が高い |
-| `screen:` | `smallestScreenWidthDp` が 600 未満なら、タブレット判定で弾かれている線が濃い |
-| `Rune:` の一覧 | タスクバー関連のフラグが**実在するか、実名は何か、現在値は何か** |
-| `dexkit classes` | タスクバー実装のクラス名。ここからフックすべき実体を決める |
+確認した環境は **SM-S931Z（ Galaxy S25、バー型 ）/ One UI 8.5（ 80500 ）/ Android 16**、
+ランチャーは単一 APK（ split なし、5 dex、約 59 MB ）。画面は `sw384dp`。
+
+## 特定した門番
+
+タスクバーは boolean フラグ 1 個ではなく、**3 段の判定**で閉じられていた。
+
+### 1. `com.honeyspace.common.Rune.HOME_SUPPORT_TASKBAR` — 大元
+
+```java
+// com.honeyspace.common.Rune の <clinit>
+HOME_SUPPORT_TASKBAR = semFloatingFeature.getBoolean("SEC_FLOATING_FEATURE_LAUNCHER_SUPPORT_TASKBAR");
+```
+
+`SEC_FLOATING_FEATURE_LAUNCHER_SUPPORT_TASKBAR` は **SM-S931Z の `/system/etc/floating_feature.xml` に存在しない**。
+存在しないキーの `getBoolean` は false を返すので、この時点で固定的に false になる。
+
+これが false のとき、タスクバーは表示されないのではなく**存在ごと消える**。
+
+| 場所 | false のときの挙動 |
+| --- | --- |
+| `TaskbarControllerImpl.<init>` | イベント配線のブロックをまるごと飛ばす |
+| `TaskbarControllerImpl.initialize()` | 即 return。タスクバーの Pot が作られない |
+| `TaskbarVisibilityController.<init>` / `.init()` | `TaskbarState` を 0 にして即 return |
+| `TaskbarControllerProxyImpl.getTaskbarController()` | null を返す。スワイプのヒント描画が死ぬ |
+| `GestureInputHandler` | タスクバー向けのジェスチャ処理が無効 |
+| `TaskbarUtilImpl.getTaskbarEnabled()` | 常に false |
+
+参照側は表示系もジェスチャ系も**すべて `Rune.INSTANCE.getHOME_SUPPORT_TASKBAR()`**、
+つまり `com.honeyspace.common.Rune$Companion#getHOME_SUPPORT_TASKBAR()` を通る。入口が 1 つなのでフックしやすい。
+
+### 2. `TaskbarControllerImpl._taskbarAvailable`
+
+```java
+// TaskbarControllerImpl の <init>
+Integer num = (Integer) globalSettingsDataSource.get(globalSettingKeys.getTASK_BAR_AVAILABLE()).getValue();
+this._taskbarAvailable = StateFlowKt.MutableStateFlow(num != null && num.intValue() == 1);
+```
+
+`TASK_BAR_AVAILABLE` の実体は **Settings.Global の `sem_task_bar_available`** で、実機の値は `0`。
+
+この値は次の一本道で効いてくる。
+
+```java
+getTaskbarStyleInfo() =
+    getTaskbarStyleInfo(_taskbarAvailable && !isEasySpace && HOME_SUPPORT_TASKBAR, docked, hide);
+
+getTaskbarStyleInfo(available, docked, hide) =
+    new TaskbarStyleInfo((available || docked) && !hide, ...);
+```
+
+門番 1 を開けても `available` が false なら `TaskbarStyleInfo.isTaskbar` が false になり、ビューは作られない。
+
+### 3. `TaskbarUtilImpl.getTaskbarEnabled()`
+
+```java
+public boolean getTaskbarEnabled() {
+    Integer num;
+    return Rune.INSTANCE.getHOME_SUPPORT_TASKBAR()
+        && (num = (Integer) this.globalSettingsDataSource.get(GlobalSettingKeys.INSTANCE.getTASK_BAR_ENABLED()).getValue()) != null
+        && num.intValue() == 1;
+}
+```
+
+`TASK_BAR_ENABLED` の実体は **Settings.Global の `task_bar`**（ 既定値 0 ）。
+これは本来「設定アプリのタスクバー ON/OFF」に対応するが、門番 1 が閉じている端末ではその設定項目自体が作られないため、
+値は未設定のまま既定の 0 に落ちる。
+
+参考までに、関連する設定キーの実名は以下のとおり（ いずれも `Settings.Global` ）。
+
+| 定数 | キー | 既定値 |
+| --- | --- | --- |
+| `TASK_BAR_ENABLED` | `task_bar` | 0 |
+| `TASK_BAR_AVAILABLE` | `sem_task_bar_available` | 0 |
+| `TASK_BAR_TYPE` | `taskbar_style_type` | 1 |
+| `TASK_BAR_RECENT_ENABLED` | `taskbar_recent_apps_enabled` | 0 |
+
+## あえて触っていないもの
+
+`com.honeyspace.ui.common.ModelFeature` にも端末種別の判定がある。
+
+```java
+static {
+    isTabletModel     = Rune.INSTANCE.getSUPPORT_TABLET_TYPE();
+    isMultiFoldModel  = Rune.INSTANCE.getSUPPORT_MULTI_FOLDABLE_HOME();
+    isBarModel        = !(isTabletModel || isFoldModel || isMultiFoldModel);
+}
+```
+
+これは次を左右する。
+
+- `FloatingTaskbarShowCheckerImpl.isShowing()` — **フローティング**タスクバーの表示可否
+- `TaskbarControllerImpl.isTabletOrMultiFoldModel` — `updateTouchRect()` の早期 return、最近アプリ画面でのタスクバー維持
+- `TaskbarVisibilityController.maintainTaskbarInRecent`
+
+通常のタスクバーを出すだけなら**これらは不要**で、しかも偽装するとレイアウト全体がタブレット扱いになり副作用が大きい。
+そのためモジュールでは触っていない。フローティング形状や最近アプリ画面での挙動まで必要になった場合の拡張点として記録しておく。
+
+同様に、`smallestScreenWidthDp` を偽装する方向も採っていない。この機能は sw600dp では分岐していないため必要がない。
 
 ## 実装
 
-`app/src/main/java/io/github/soclear/oneuix/hook/LauncherTaskbar.kt` 。ランチャープロセスでのみ動きます。
+`app/src/main/java/io/github/soclear/oneuix/hook/LauncherTaskbar.kt`。
+名前はすべて実名決め打ちで、DexKit による探索も総当たりのヒューリスティックも使わない。
 
-- `forceTaskbarCapability()` — `com.honeyspace.sdk.Rune` と（ランチャープロセス内の）
-  `com.samsung.android.rune.CoreRune` について、静的 boolean フィールドと無引数 boolean ゲッターを
-  走査し、「対応・利用可否」を意味する名前のものだけ true に固定する。
-  フラグは静的初期化子で端末種別から計算されるため、
-  `Class.forName(name, true, classLoader)` で `<clinit>` を先に走らせてから上書きする。
-- `forceTaskbarFloatingFeature()` — `SemFloatingFeature.getBoolean()` の同条件のキーを true にする。
-- `dumpDiagnostics()` — 端末情報・フラグ一覧・DexKit で拾ったタスクバー関連の実名をログに出す。
+| フック対象 | 内容 |
+| --- | --- |
+| `SemFloatingFeature#getBoolean(String[, boolean])` | キーが `SEC_FLOATING_FEATURE_LAUNCHER_SUPPORT_TASKBAR` のとき true |
+| `com.honeyspace.common.Rune$Companion#getHOME_SUPPORT_TASKBAR()` | 常に true |
+| `TaskbarControllerImpl#getTaskbarStyleInfo(boolean, boolean, boolean)` | 第 1 引数 `available` を true に差し替え |
+| `TaskbarUtilImpl#getTaskbarEnabled()` | 常に true |
 
-`ENABLED` 系を対象に含めていないのは、それが**ユーザー自身の ON/OFF 設定**である可能性が高く、
-true 固定にすると本人がタスクバーを消せなくなるためです。
+設計上の判断を 2 点。
 
-## 次の工程
+**静的フィールドではなくゲッターを差し替える。** `Rune.HOME_SUPPORT_TASKBAR` は `static final` で
+リフレクションから書き換えられないうえ、値は `<clinit>` で計算される。ゲッターを置き換えれば
+クラス初期化のタイミングに左右されない。`SemFloatingFeature` 側のフックは、
+同一モジュール内からフィールドが直接読まれた場合の取りこぼしを防ぐ保険であり、
+`Rune` の `<clinit>` より先に仕込むため最初に呼んでいる。
 
-診断ログで実名が判明したら、
+**システム設定は書き換えない。** `sem_task_bar_available` や `task_bar` に値を書けば恒久的に残ってしまう。
+代わりに読み出しの合流点をフックしているので、モジュールのスイッチを切れば元の挙動に戻る。
 
-1. 総当たりのヒューリスティックを**実名を決め打ちしたフック**に置き換える
-2. `dumpDiagnostics()` の呼び出しを削除する（起動が遅くなる原因なので残さない）
-3. このドキュメントを「動く機能」の説明に書き直す
+## 制限と既知のリスク
 
-画面の最小幅が原因だった場合は `smallestScreenWidthDp` をランチャープロセス内だけ大きく見せる
-方向になりますが、**レイアウト全体がタブレット扱いになって副作用が出やすい**ので、
-タスクバーの生成経路だけに効く最小のフックを探す必要があります。
+- 確認済みなのは One UI 8.5 / SM-S931Z の APK 解析まで。**実機での動作確認は未実施**
+- クラス名・メソッド名は One UI のバージョンで変わりうる。変わった場合はフックが黙って外れる
+  （ 各フックは個別に try/catch していて、失敗は Xposed のログに出る ）
+- フローティング形状のタスクバーと、最近アプリ画面でのタスクバー維持は対象外（ 上記 `ModelFeature` の項を参照 ）
+- 設定アプリ側のタスクバー関連メニューは、システム側が `sem_task_bar_available = 0` のままなので出てこない可能性がある
+
+## 動作確認の手順
+
+1. モジュール APK をインストールする
+2. LSPosed でモジュールを有効にし、**スコープに「ホーム画面（ `com.sec.android.app.launcher` ）」を追加**する
+3. OneUIX の設定で「Fold 専用のタスクバー（ドック）を解放」を ON にする
+4. ランチャーを再起動する（ 設定 → アプリ → ホーム画面 → 強制停止、または端末を再起動 ）
+5. 画面下端から上にゆっくりスワイプしてタスクバーが出るか確認する
+
+うまくいかない場合は、次のログに手がかりが出る。
+
+```
+adb logcat -d | grep -i -E "LSPosed|TaskbarControllerImpl|TaskbarVisibilityController"
+```
+
+特に `create TaskbarStyleInfo: taskbarEnabled=...(available=..., easy=..., rune=...)` という行が
+`TaskbarControllerImpl` から出ていて、3 つの門番がそれぞれどうなっているかをそのまま読める。

@@ -149,7 +149,7 @@
     <string name="hideLockscreenStatusBar_title">Hide status bar on lock screen</string>
     <string name="hideAppsSearchBar_title">Hide search bar on app screen</string>
     <string name="unlockFoldTaskbar_title">Unlock Fold-exclusive taskbar (dock)</string>
-    <string name="unlockFoldTaskbar_summary">Experimental: the gate that limits the swipe-up taskbar to foldables is not identified yet on this One UI version. This forces the capability flags it can find and writes the taskbar internals it sees to the Xposed log, which is what pins the real gate down. Launcher start may take a few seconds longer</string>
+    <string name="unlockFoldTaskbar_summary">Brings the swipe-up taskbar to bar-type phones by opening the three checks One UI uses to keep it on foldables and tablets. No system setting is changed, so turning this off restores the original behaviour. Restart the launcher to apply</string>
     <string name="removeShortcutBadge_title">Remove bottom-right shortcut badge</string>
     <string name="removeShortcutBadge_summary">Remove the original app badge from the bottom-right corner of home screen shortcuts</string>
     <string name="watchPairing_connectionMode_title">Watch connection mode</string>

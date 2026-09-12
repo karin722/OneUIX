@@ -149,7 +149,7 @@
     <string name="hideLockscreenStatusBar_title">ロック画面のステータスバーを隠す</string>
     <string name="hideAppsSearchBar_title">アプリ一覧画面の検索バーを隠す</string>
     <string name="unlockFoldTaskbar_title">Fold 専用のタスクバー（ドック）を解放</string>
-    <string name="unlockFoldTaskbar_summary">試験的：この One UI ではスワイプで出るタスクバーの門番がまだ特定できていません。見つかった対応フラグを true にしたうえで、ランチャー内部のタスクバー関連の実名を Xposed のログに出します。そのログが本当の門番を突き止める材料になります。ランチャーの起動が数秒遅くなることがあります</string>
+    <string name="unlockFoldTaskbar_summary">One UI がタスクバーを Fold とタブレットに限定している 3 つの判定を開けて、バー型端末でもスワイプでタスクバーを出せるようにします。システム設定は書き換えないので、オフにすれば元に戻ります。適用にはランチャーの再起動が必要です</string>
     <string name="removeShortcutBadge_title">ショートカット右下のバッジを消す</string>
     <string name="removeShortcutBadge_summary">ホーム画面のショートカット右下に付く、元アプリのバッジを消します</string>
     <string name="watchPairing_connectionMode_title">スマートウォッチの接続モード</string>

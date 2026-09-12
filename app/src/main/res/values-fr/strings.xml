@@ -133,7 +133,7 @@
     <string name="hideLockscreenStatusBar_title">Masquer la barre d\'état sur l\'écran de verrouillage</string>
     <string name="hideAppsSearchBar_title">Masquer la barre de recherche sur l\'écran des applications</string>
     <string name="unlockFoldTaskbar_title">Débloquer la barre des tâches (dock) réservée aux Fold</string>
-    <string name="unlockFoldTaskbar_summary">Expérimental : le verrou qui réserve la barre des tâches par balayage aux pliables n\'est pas encore identifié sur cette version de One UI. Cette option force les indicateurs de prise en charge trouvés et écrit dans le journal Xposed les noms internes liés à la barre des tâches, ce qui permettra de localiser le vrai verrou. Le lanceur peut mettre quelques secondes de plus à démarrer</string>
+    <string name="unlockFoldTaskbar_summary">Rend la barre des tâches par balayage disponible sur les téléphones classiques en levant les trois vérifications par lesquelles One UI la réserve aux pliables et aux tablettes. Aucun réglage système n\'est modifié : désactiver cette option rétablit le comportement d\'origine. Redémarrez le lanceur pour appliquer</string>
     <string name="removeShortcutBadge_title">Supprimer le badge en bas à droite du raccourci</string>
     <string name="removeShortcutBadge_summary">Supprimer le badge de l\'application d\'origine situé dans le coin inférieur droit des icônes de raccourci de l\'écran d\'accueil</string>
     <string name="watchPairing_connectionMode_title">Mode de connexion de la montre</string>
