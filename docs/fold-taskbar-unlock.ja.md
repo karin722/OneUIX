@@ -127,6 +127,8 @@ static {
 | `TaskbarUtilImpl#getTaskbarEnabled()` | 常に true |
 | `com.honeyspace.common.Rune$Companion#getSUPPORT_EDIT_ON_TASKBAR()` | 常に true（ タスクバー上でアイコンを掴めるようにする ） |
 | `Resources#getDrawable(int, Theme)` | `ic_all_apps` の要求を、現在のモードに合う 1 枚に差し替え |
+| ホットシートのレイアウト計画クラスのコンストラクタ | タスクバー用のときだけ目印を立てる（ DexKit で探索 ） |
+| `ModelFeature$Companion#isMultiFoldModel()` | 上の目印が立っているあいだだけ true |
 
 設計上の判断を 2 点。
 
@@ -207,29 +209,64 @@ Rune 側を true にするのは Home Up と同じ分岐に乗るだけで済む
 
 **対処**: `Rune$Companion#getSUPPORT_EDIT_ON_TASKBAR()` を true にした。
 
-### ドックの上限は 5 個で、ホーム画面と共有している（ 未対処 ）
+### タスクバーが空に見えて、何も追加できない
 
-上とは別に、**ドックに入る数そのもの**がバー型端末では 5 個に固定されている。
+当初「ドックが満杯だから」と説明したが、これは**誤り**だった。実機ログの数値がはっきり否定している。
 
-```java
-// HotseatViewModel.K() — ドックの最大数
-if (displayType == MAIN) {
-    return (isHomeOnlySpace() || !coverMainSync) ? C() : getHotseatCount();
-}
-// C() = getHotseatCountForCover() ?: getHotseatCount()
+```
+[TASKBAR]    count = 7, visibleMaxCount = 7, iconSize-Taskbar = 0, itemWidth = 0
+[HOTSEATBAR] count = 5, visibleMaxCount = 5, iconSize-Taskbar = 0, itemWidth = 0
+TaskbarPot: updateLayout() [count=5,...], iconSize=0
 ```
 
-バー型端末では `coverMainSync` が null なので `C()` に落ち、`hotseatCountForCover` の
-**5** が返る（ `AbsDefaultPreferenceValue` で機種によらず 5 に設定されている ）。
+タスクバーの枠は 7 つあって 5 個しか埋まっていない。満杯ではない。
+本当の問題は**アイコンのサイズが 0** なことで、幅ゼロの要素が並ぶので見た目が空になり、
+置き場所も確保できない。
 
-タスクバーとホーム画面のドックは同じコンテナなので、この 5 枠は両者で共有される。
-実機ログでも 3 つの別々のアプリをドックに入れようとしてすべて弾かれており、
-単純に 5 枠が埋まっている状態だった。これは Fold でも同じ仕組みで、
-タスクバー解放とは独立した One UI 本来の挙動なので、このモジュールでは触っていない。
+原因はホットシートの寸法計算クラスの選び方にある。
 
-上限を上げるなら `PreferenceDataSource#getHotseatCountForCover()` を null にして
-`hotseatCount` 側へ落とす手があるが、**ホーム画面のドックの見た目も一緒に変わる**ため、
-副作用の説明なしに入れるべきではないと判断した。
+```java
+ModelFeature.Companion companion = ModelFeature.INSTANCE;
+if (companion.isTabletModel() || combinedDexInfo.getIsDexSpace()
+        || (companion.isMultiFoldModel() && (isTaskBar || deviceStatusSource.isMainState(z10)))) {
+    nVar = new v(...);        // タブレット / MultiFold
+} else if (companion.isFoldModel() && (isTaskBar || isMainState)) {
+    nVar = new b(...);        // Fold
+} else if (...) {
+    nVar = new a(..., 0);     // Fold カバー
+} else {
+    nVar = new a(..., 1);     // ★ バー型はここ
+}
+```
+
+タスクバーのアイコンサイズを代入しているのは `v` と `b` だけで、
+バー型が使う `a` は 111 行しかなく、**タスクバーの寸法計算がそもそも書かれていない**。
+フラグで塞がれているのではなく、実装が存在しない。
+
+**対処**: タスクバーのレイアウト計画を組む瞬間に限って `isMultiFoldModel()` を true に見せ、
+タブレット系（ `v` ）の計算を使わせる。`v` には `smallWidth < 700` と `< 620` の
+狭い画面向けの分岐が既にあるので、バー型の 384dp でも破綻しない。
+
+`ModelFeature` を恒久的に書き換えないのが要点になる。あのフラグは
+`AbsDefaultPreferenceValue` の静的初期化でも読まれていて、恒久的に true にすると
+**ホーム画面のグリッド既定値が 4 列から 6 列に、ドックが 14 枠に変わる**。
+既存のホーム画面配置が壊れうるので、スコープを絞る以外の選択肢は取れない。
+
+対象クラスは難読化されているが、コンストラクタの引数型は
+
+```java
+(Context, int, Point, Point, CombinedDexInfo, ParentType, DeviceStatusSource,
+ boolean, boolean, int, boolean, float, CommonSettingsDataSource$ItemSizeLevel,
+ boolean, CoverSyncHelper, UpdateWorkspaceItemStyleData)
+```
+
+とすべて難読化されていない型で構成されているため、DexKit で一意に特定できる。
+結果はこのリポジトリ既存の `getHookConfig` で JSON にキャッシュされ、
+探索が走るのはランチャーの更新後の初回起動だけになる。
+
+なお、ドックの枠数そのものはホーム画面と共有している（ 同じコンテナ ）。
+タスクバー側の上限は実測で 7、ホーム画面側は 5 だった。
+
 
 ## 制限と既知のリスク
 
@@ -237,7 +274,8 @@ if (displayType == MAIN) {
 - クラス名・メソッド名は One UI のバージョンで変わりうる。変わった場合はフックが黙って外れる
   （ 各フックは個別に try/catch していて、失敗は Xposed のログに出る ）
 - フローティング形状のタスクバーと、最近アプリ画面でのタスクバー維持は対象外（ 上記 `ModelFeature` の項を参照 ）
-- ドックの枠は 5 個のままで、ホーム画面のドックと共有している（ 上記の項を参照 ）
+- ドックの枠はホーム画面のドックと共有している（ 同じコンテナ ）
+- レイアウト計画クラスは DexKit の探索結果に依存するので、One UI の更新で引数の並びが変わると見つからなくなる（ その場合アイコンサイズが 0 に戻る ）
 - アプリ一覧ボタンの色は、モード切り替え後にタスクバーが作り直されるまで反映されないことがある
 - 設定アプリ側のタスクバー関連メニューは、システム側が `sem_task_bar_available = 0` のままなので出てこない可能性がある
 

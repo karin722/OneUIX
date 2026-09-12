@@ -133,7 +133,7 @@
     <string name="hideLockscreenStatusBar_title">잠금 화면에서 상태바 숨기기</string>
     <string name="hideAppsSearchBar_title">앱스 화면에서 검색창 숨기기</string>
     <string name="unlockFoldTaskbar_title">폴드 전용 태스크바(독) 해제</string>
-    <string name="unlockFoldTaskbar_summary">One UI가 태스크바를 폴더블과 태블릿으로 제한하는 세 가지 검사를 해제해, 바형 단말에서도 스와이프로 태스크바를 열 수 있게 합니다. 시스템 설정은 바꾸지 않으므로 끄면 원래대로 돌아갑니다. 적용하려면 런처를 다시 시작하세요</string>
+    <string name="unlockFoldTaskbar_summary">One UI가 태스크바를 폴더블과 태블릿으로 제한하는 검사를 해제해, 바형 단말에서도 스와이프로 태스크바를 열 수 있게 합니다. 시스템 설정은 바꾸지 않으므로 끄면 원래대로 돌아갑니다. 런처 업데이트 후 첫 실행에만 레이아웃 코드를 찾느라 몇 초 더 걸립니다</string>
     <string name="removeShortcutBadge_title">바로가기 우측 하단 배지 제거</string>
     <string name="removeShortcutBadge_summary">홈 화면 바로가기 아이콘 오른쪽 아래에 표시되는 원본 앱의 소스 배지를 제거합니다</string>
     <string name="watchPairing_connectionMode_title">워치 연결 모드</string>

@@ -141,7 +141,7 @@
     <string name="hideLockscreenStatusBar_title">隐藏锁屏界面的状态栏</string>
     <string name="hideAppsSearchBar_title">隐藏应用屏幕搜索栏</string>
     <string name="unlockFoldTaskbar_title">解锁 Fold 专属任务栏（Dock）</string>
-    <string name="unlockFoldTaskbar_summary">打开 One UI 将任务栏限定于折叠屏和平板的三处判定，让直板手机也能上滑呼出任务栏。不会修改系统设置，关闭后即可恢复原状。需重启启动器生效</string>
+    <string name="unlockFoldTaskbar_summary">打开 One UI 将任务栏限定于折叠屏和平板的判定，让直板手机也能上滑呼出任务栏。不会修改系统设置，关闭后即可恢复原状。启动器更新后的首次启动会多花几秒定位布局代码</string>
     <string name="removeShortcutBadge_title">移除快捷方式图标右下角小角标</string>
     <string name="removeShortcutBadge_summary">去掉桌面快捷方式图标右下角的原 APP 小角标</string>
     <string name="watchPairing_connectionMode_title">手表连接模式</string>

@@ -1,27 +1,37 @@
 package io.github.soclear.oneuix.hook
 
+import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XC_MethodReplacement
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers.findAndHookMethod
+import de.robv.android.xposed.XposedHelpers.findClass
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import io.github.soclear.oneuix.data.Package
+import io.github.soclear.oneuix.hook.util.HookConfig
+import io.github.soclear.oneuix.hook.util.afterAttach
+import io.github.soclear.oneuix.hook.util.getHookConfig
+import io.github.soclear.oneuix.hook.util.longVersionCode
+import kotlinx.serialization.Serializable
+import org.luckypray.dexkit.DexKitBridge
+import java.io.File
 
 /**
  * Fold / タブレット限定になっているタスクバー（ 画面下端からスワイプで出るドック ）をバー型端末でも使えるようにする。
  *
- * One UI 8 / 8.5 のランチャー（ honeyspace ）を逆コンパイルして特定した、実在する 3 つの門番を開ける。
+ * One UI 8 / 8.5 のランチャー（ honeyspace ）を逆コンパイルして特定した門番を開ける。
  * 詳しい根拠は docs/fold-taskbar-unlock.ja.md を参照。
  *
- * 1. [com.honeyspace.common.Rune] の `HOME_SUPPORT_TASKBAR`（ 大元 ）
- * 2. [com.honeyspace.ui.common.taskbar.TaskbarControllerImpl] の `_taskbarAvailable`
- * 3. [com.honeyspace.ui.common.util.TaskbarUtilImpl] の `taskbarEnabled`（ 設定の ON/OFF ）
+ * 大きく 2 段構えになっている。
  *
- * 端末の種別そのもの（ ModelFeature.isTabletModel など ）はあえて触らない。
- * あれを偽装するとレイアウト全体がタブレット扱いになって副作用が大きく、
- * 通常のタスクバーを出すだけならここまでで足りるため。
+ * 1. そもそもタスクバーを作らせないフラグ群（ [forceRuneTaskbarSupport] ほか ）
+ * 2. 作られたあとに中身が破綻する分（ [fixAllAppsButtonTint] / [useTaskbarAwareLayoutPlan] ）
+ *
+ * 端末種別（ ModelFeature ）は原則として触らない。あれを丸ごと偽装すると
+ * ホーム画面のグリッド既定値まで変わってしまうため、
+ * [useTaskbarAwareLayoutPlan] では**タスクバーのレイアウトを組む瞬間だけ**に限定して差し替えている。
  */
 object LauncherTaskbar {
     /**
@@ -39,6 +49,14 @@ object LauncherTaskbar {
     private const val SEM_FLOATING_FEATURE_CLASS =
         "com.samsung.android.feature.SemFloatingFeature"
 
+    private const val MODEL_FEATURE_COMPANION_CLASS =
+        $$"com.honeyspace.ui.common.ModelFeature$Companion"
+
+    private const val PARENT_TYPE_CLASS = "com.honeyspace.ui.common.entity.ParentType"
+
+    /** [PARENT_TYPE_CLASS] のうち、タスクバー扱いになる列挙子。`ParentType.isTaskBar()` と同じ判定。 */
+    private val TASKBAR_PARENT_TYPES = setOf("TASKBAR", "DEXTASKBAR")
+
     /**
      * `Rune.HOME_SUPPORT_TASKBAR` の唯一の入力。
      * バー型端末では /system/etc/floating_feature.xml にこのキー自体が無く、
@@ -55,9 +73,14 @@ object LauncherTaskbar {
         forceRuneTaskbarSupport(loadPackageParam)
         forceTaskbarAvailable(loadPackageParam)
         forceTaskbarEnabled(loadPackageParam)
-        fixAllAppsButtonTint(loadPackageParam)
         allowEditOnTaskbar(loadPackageParam)
+        fixAllAppsButtonTint(loadPackageParam)
+        useTaskbarAwareLayoutPlan(loadPackageParam)
     }
+
+    // ------------------------------------------------------------------
+    // 1. タスクバーを作らせている門番
+    // ------------------------------------------------------------------
 
     /**
      * 門番 1: `Rune.HOME_SUPPORT_TASKBAR`。
@@ -171,10 +194,6 @@ object LauncherTaskbar {
         }
     }
 
-    // ------------------------------------------------------------------
-    // 解放したあとに出てくる不具合の手当て
-    // ------------------------------------------------------------------
-
     /**
      * タスクバーの上でアイコンを掴めるようにする。
      *
@@ -183,10 +202,7 @@ object LauncherTaskbar {
      * つまり本来は Good Lock の Home Up にある「タスクバーを編集」でしか true にならない。
      *
      * これが false のあいだ、タスクバーのホットシートはドロップ先として振る舞わないので、
-     * タスクバーの上に落としたつもりのアイコンは下のホーム画面にすり抜けて、
-     * ホーム側のドックが満杯だと「お気に入りとして追加するスペースがありません」になる。
-     *
-     * Home Up が入れる値と同じ経路なので、ここを true にするのは既存の分岐に乗るだけで済む。
+     * タスクバーの上に落としたつもりのアイコンは下のホーム画面にすり抜けてしまう。
      */
     private fun allowEditOnTaskbar(loadPackageParam: LoadPackageParam) {
         try {
@@ -200,6 +216,10 @@ object LauncherTaskbar {
             XposedBridge.log(t)
         }
     }
+
+    // ------------------------------------------------------------------
+    // 2. 作られたあとに破綻する分の手当て
+    // ------------------------------------------------------------------
 
     /** 一度引いたら変わらないので覚えておく。0 は「見つからなかった」の意味で使う。 */
     private var allAppsIconId = -1
@@ -274,5 +294,154 @@ object LauncherTaskbar {
                 resources.getIdentifier("ic_all_apps_dark", "drawable", Package.LAUNCHER)
         }
         return allAppsIconDarkId
+    }
+
+    // ------------------------------------------------------------------
+    // タスクバーのレイアウト寸法
+    // ------------------------------------------------------------------
+
+    @Serializable
+    data class TaskbarHookConfig(
+        override val versionCode: Long,
+        /** ホットシートのレイアウト計画クラス（ 難読化されているので毎バージョン探し直す ）。 */
+        val layoutPlanClass: String,
+    ) : HookConfig
+
+    /**
+     * レイアウト計画を組んでいる最中かどうか。コンストラクタの中だけで見たいので ThreadLocal。
+     * ホットシートの生成は UI スレッドなので、これで十分に閉じる。
+     */
+    private val buildingTaskbarLayout = ThreadLocal.withInitial { false }
+
+    /**
+     * タスクバーのアイコンサイズが 0 になり、中身が見えず何も置けなくなるのを直す。
+     *
+     * ホットシートの寸法計算は端末種別で 3 つのクラスに分かれていて、
+     * タスクバーの寸法を計算するコードは**タブレット系と Fold 系にしか書かれていない**。
+     * バー型端末が使うクラスにはそもそも実装が無く、アイコンサイズは初期値の 0 のままになる。
+     *
+     * ```java
+     * if (isTabletModel() || isDexSpace || (isMultiFoldModel() && (isTaskBar || isMainState))) {
+     *     nVar = new v(...);       // タブレット系。狭い画面向けの分岐も持っている
+     * } else if (isFoldModel() && (isTaskBar || isMainState)) {
+     *     nVar = new b(...);       // Fold 系
+     * } else {
+     *     nVar = new a(...);       // バー型。タスクバーの寸法計算が無い
+     * }
+     * ```
+     *
+     * そこで**タスクバーのレイアウト計画を組む瞬間に限って** `isMultiFoldModel()` を true に見せ、
+     * タブレット系の計算を使わせる。ホーム画面側のホットシートは `ParentType` が違うので影響を受けず、
+     * `ModelFeature` を恒久的に書き換えないのでホーム画面のグリッド既定値も変わらない。
+     *
+     * 対象クラスは難読化されているため DexKit で探すが、コンストラクタの引数型は
+     * すべて難読化されていないので一意に特定できる。結果は JSON にキャッシュされ、
+     * ランチャーの更新後の初回起動だけ探し直す。
+     */
+    private fun useTaskbarAwareLayoutPlan(loadPackageParam: LoadPackageParam) {
+        afterAttach {
+            try {
+                val config = getHookConfig(File(filesDir, "TaskbarHookConfig.json")) {
+                    findLayoutPlanClass()
+                } ?: return@afterAttach
+
+                hookLayoutPlanConstructors(config.layoutPlanClass, loadPackageParam.classLoader)
+                forceMultiFoldWhileBuildingTaskbar(loadPackageParam.classLoader)
+            } catch (t: Throwable) {
+                XposedBridge.log(t)
+            }
+        }
+    }
+
+    /**
+     * レイアウト計画クラスを DexKit で探す。
+     * 引数の並びが特徴的なので、コンストラクタの型だけで絞り込める。
+     */
+    private fun Context.findLayoutPlanClass(): TaskbarHookConfig? {
+        System.loadLibrary("dexkit")
+        DexKitBridge.create(classLoader, true).use { bridge ->
+            val constructor = bridge.findMethod {
+                matcher {
+                    name = "<init>"
+                    paramTypes(
+                        "android.content.Context",
+                        "int",
+                        "android.graphics.Point",
+                        "android.graphics.Point",
+                        "com.honeyspace.common.interfaces.CombinedDexInfo",
+                        PARENT_TYPE_CLASS,
+                        "com.honeyspace.sdk.source.DeviceStatusSource",
+                        "boolean",
+                        "boolean",
+                        "int",
+                        "boolean",
+                        "float",
+                        // CommonSettingsDataSource$ItemSizeLevel。入れ子の列挙なので型名は指定しない。
+                        null,
+                        "boolean",
+                        "com.honeyspace.common.interfaces.CoverSyncHelper",
+                        "com.honeyspace.sdk.source.entity.UpdateWorkspaceItemStyleData",
+                    )
+                }
+            }.singleOrNull() ?: return null
+
+            return TaskbarHookConfig(
+                versionCode = longVersionCode,
+                layoutPlanClass = constructor.declaredClassName,
+            )
+        }
+    }
+
+    /** 対象クラスのコンストラクタに入っているあいだだけ目印を立てる。 */
+    private fun hookLayoutPlanConstructors(className: String, classLoader: ClassLoader) {
+        val callback = object : XC_MethodHook() {
+            override fun beforeHookedMethod(param: MethodHookParam) {
+                if (isTaskbarLayout(param.args)) {
+                    buildingTaskbarLayout.set(true)
+                }
+            }
+
+            override fun afterHookedMethod(param: MethodHookParam) {
+                // 例外で抜けた場合もここは通るので、立てっぱなしにはならない。
+                buildingTaskbarLayout.set(false)
+            }
+        }
+
+        findClass(className, classLoader).declaredConstructors.forEach { constructor ->
+            try {
+                XposedBridge.hookMethod(constructor, callback)
+            } catch (t: Throwable) {
+                XposedBridge.log(t)
+            }
+        }
+    }
+
+    /**
+     * 引数の中から `ParentType` を型で拾って、タスクバー用かどうかを見る。
+     * 位置で拾うと引数が 1 つ増えただけで壊れるので、型で探す。
+     */
+    private fun isTaskbarLayout(args: Array<Any?>): Boolean {
+        val parentType = args.firstOrNull { it?.javaClass?.name == PARENT_TYPE_CLASS }
+        return (parentType as? Enum<*>)?.name in TASKBAR_PARENT_TYPES
+    }
+
+    /** 目印が立っているあいだだけ、この端末を MultiFold だと答える。 */
+    private fun forceMultiFoldWhileBuildingTaskbar(classLoader: ClassLoader) {
+        try {
+            findAndHookMethod(
+                MODEL_FEATURE_COMPANION_CLASS,
+                classLoader,
+                "isMultiFoldModel",
+                object : XC_MethodHook() {
+                    override fun beforeHookedMethod(param: MethodHookParam) {
+                        if (buildingTaskbarLayout.get()) {
+                            param.result = true
+                        }
+                    }
+                }
+            )
+        } catch (t: Throwable) {
+            XposedBridge.log(t)
+        }
     }
 }
